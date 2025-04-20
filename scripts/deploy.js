@@ -1,19 +1,22 @@
 // Deploy script for GoldToken contract
-const hre = require("hardhat");
 
 async function main() {
   console.log("Deploying Gold Token contract...");
 
   // Get the contract factory
-  const GoldToken = await hre.ethers.getContractFactory("GoldToken");
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying contracts with the account:", deployer.address);
+
+  const GoldToken = await ethers.getContractFactory("GoldToken");
   
   // Deploy the contract
   const goldToken = await GoldToken.deploy();
 
   // Wait for deployment to finish
-  await goldToken.deployed();
-
-  console.log(`Gold Token deployed to: ${goldToken.address}`);
+  await goldToken.waitForDeployment();
+  
+  const goldTokenAddress = await goldToken.getAddress();
+  console.log(`Gold Token deployed to: ${goldTokenAddress}`);
   
   // Get contract info
   const totalSupply = await goldToken.MAX_SUPPLY();
@@ -22,15 +25,15 @@ async function main() {
   
   console.log(`Token Name: ${name}`);
   console.log(`Token Symbol: ${symbol}`);
-  console.log(`Total Supply: ${hre.ethers.utils.formatEther(totalSupply)} GOLD`);
-  console.log(`Tokens Per Mine: ${hre.ethers.utils.formatEther(await goldToken.TOKENS_PER_MINE())} GOLD`);
+  console.log(`Total Supply: ${ethers.formatEther(totalSupply)} GOLD`);
+  console.log(`Tokens Per Mine: ${ethers.formatEther(await goldToken.TOKENS_PER_MINE())} GOLD`);
   
   console.log("\nVerify contract with:");
-  console.log(`npx hardhat verify --network somnia-testnet ${goldToken.address}`);
+  console.log(`npx hardhat verify --network somnia-testnet ${goldTokenAddress}`);
   
   // Encourage updating ENV file
   console.log("\nDon't forget to update your .env file with the contract address!");
-  console.log(`CONTRACT_ADDRESS=${goldToken.address}`);
+  console.log(`CONTRACT_ADDRESS=${goldTokenAddress}`);
 }
 
 // Execute deployment

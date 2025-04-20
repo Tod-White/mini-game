@@ -1,13 +1,9 @@
 require("@nomicfoundation/hardhat-verify");
-require("@nomicfoundation/hardhat-ethers");
 require("dotenv").config();
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.22",
-  defaultNetwork: "hardhat",
   networks: {
-    hardhat: {},
     "somnia-testnet": {
       url: process.env.RPC_URL || "https://dream-rpc.somnia.network",
       chainId: 50312,

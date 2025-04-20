@@ -1,11 +1,11 @@
 // Deploy script for GoldToken contract
-const { ethers } = require("hardhat");
+const hre = require("hardhat");
 
 async function main() {
   console.log("Deploying Gold Token contract...");
 
   // Get the contract factory
-  const GoldToken = await ethers.getContractFactory("GoldToken");
+  const GoldToken = await hre.ethers.getContractFactory("GoldToken");
   
   // Deploy the contract
   const goldToken = await GoldToken.deploy();
@@ -22,8 +22,8 @@ async function main() {
   
   console.log(`Token Name: ${name}`);
   console.log(`Token Symbol: ${symbol}`);
-  console.log(`Total Supply: ${ethers.utils.formatEther(totalSupply)} GOLD`);
-  console.log(`Tokens Per Mine: ${ethers.utils.formatEther(await goldToken.TOKENS_PER_MINE())} GOLD`);
+  console.log(`Total Supply: ${hre.ethers.utils.formatEther(totalSupply)} GOLD`);
+  console.log(`Tokens Per Mine: ${hre.ethers.utils.formatEther(await goldToken.TOKENS_PER_MINE())} GOLD`);
   
   console.log("\nVerify contract with:");
   console.log(`npx hardhat verify --network somnia-testnet ${goldToken.address}`);

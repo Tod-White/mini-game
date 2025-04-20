@@ -24,9 +24,9 @@ async function main() {
   const initialMinerStats = await goldToken.minerStats(signer.address);
   const initialTotalMined = await goldToken.totalMined();
   
-  console.log(`\nInitial balance: ${ethers.formatEther(initialBalance)} GOLD`);
-  console.log(`Initial miner stats: ${ethers.formatEther(initialMinerStats)} GOLD`);
-  console.log(`Initial total mined: ${ethers.formatEther(initialTotalMined)} GOLD`);
+  console.log(`\nInitial balance: ${ethers.utils.formatEther(initialBalance)} GOLD`);
+  console.log(`Initial miner stats: ${ethers.utils.formatEther(initialMinerStats)} GOLD`);
+  console.log(`Initial total mined: ${ethers.utils.formatEther(initialTotalMined)} GOLD`);
   
   // Mine tokens
   console.log("\nMining tokens...");
@@ -41,25 +41,24 @@ async function main() {
   const newMinerStats = await goldToken.minerStats(signer.address);
   const newTotalMined = await goldToken.totalMined();
   
-  console.log(`\nNew balance: ${ethers.formatEther(newBalance)} GOLD`);
-  console.log(`New miner stats: ${ethers.formatEther(newMinerStats)} GOLD`);
-  console.log(`New total mined: ${ethers.formatEther(newTotalMined)} GOLD`);
+  console.log(`\nNew balance: ${ethers.utils.formatEther(newBalance)} GOLD`);
+  console.log(`New miner stats: ${ethers.utils.formatEther(newMinerStats)} GOLD`);
+  console.log(`New total mined: ${ethers.utils.formatEther(newTotalMined)} GOLD`);
   
   // Calculate differences
-  const balanceDiff = newBalance - initialBalance;
-  const minedDiff = newTotalMined - initialTotalMined;
+  const balanceDiff = newBalance.sub(initialBalance);
+  const minedDiff = newTotalMined.sub(initialTotalMined);
   
-  console.log(`\nReceived: ${ethers.formatEther(balanceDiff)} GOLD`);
-  console.log(`Total mined change: ${ethers.formatEther(minedDiff)} GOLD`);
+  console.log(`\nReceived: ${ethers.utils.formatEther(balanceDiff)} GOLD`);
+  console.log(`Total mined change: ${ethers.utils.formatEther(minedDiff)} GOLD`);
   
   // Get remaining supply
   const remainingSupply = await goldToken.getRemainingSupply();
-  console.log(`\nRemaining supply: ${ethers.formatEther(remainingSupply)} GOLD`);
+  console.log(`\nRemaining supply: ${ethers.utils.formatEther(remainingSupply)} GOLD`);
   
   // Calculate mining progress
-  const maxSupply = await goldToken.MAX_SUPPLY();
-  const miningProgress = (Number(ethers.formatEther(newTotalMined)) / 
-                         Number(ethers.formatEther(maxSupply))) * 100;
+  const miningProgress = (parseFloat(ethers.utils.formatEther(newTotalMined)) / 
+                         parseFloat(ethers.utils.formatEther(await goldToken.MAX_SUPPLY()))) * 100;
   console.log(`Mining progress: ${miningProgress.toFixed(4)}%`);
 }
 

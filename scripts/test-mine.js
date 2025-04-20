@@ -1,5 +1,5 @@
 // Script to test mining functionality of the deployed GoldToken
-const hre = require("hardhat");
+const { ethers } = require("hardhat");
 require("dotenv").config();
 
 async function main() {
@@ -12,11 +12,11 @@ async function main() {
   }
 
   // Get signer
-  const [signer] = await hre.ethers.getSigners();
+  const [signer] = await ethers.getSigners();
   console.log(`Using account: ${signer.address}`);
   
   // Get contract instance
-  const GoldToken = await hre.ethers.getContractFactory("GoldToken");
+  const GoldToken = await ethers.getContractFactory("GoldToken");
   const goldToken = await GoldToken.attach(contractAddress);
   
   // Get initial balances and stats
@@ -24,9 +24,9 @@ async function main() {
   const initialMinerStats = await goldToken.minerStats(signer.address);
   const initialTotalMined = await goldToken.totalMined();
   
-  console.log(`\nInitial balance: ${hre.ethers.utils.formatEther(initialBalance)} GOLD`);
-  console.log(`Initial miner stats: ${hre.ethers.utils.formatEther(initialMinerStats)} GOLD`);
-  console.log(`Initial total mined: ${hre.ethers.utils.formatEther(initialTotalMined)} GOLD`);
+  console.log(`\nInitial balance: ${ethers.formatEther(initialBalance)} GOLD`);
+  console.log(`Initial miner stats: ${ethers.formatEther(initialMinerStats)} GOLD`);
+  console.log(`Initial total mined: ${ethers.formatEther(initialTotalMined)} GOLD`);
   
   // Mine tokens
   console.log("\nMining tokens...");
@@ -41,24 +41,25 @@ async function main() {
   const newMinerStats = await goldToken.minerStats(signer.address);
   const newTotalMined = await goldToken.totalMined();
   
-  console.log(`\nNew balance: ${hre.ethers.utils.formatEther(newBalance)} GOLD`);
-  console.log(`New miner stats: ${hre.ethers.utils.formatEther(newMinerStats)} GOLD`);
-  console.log(`New total mined: ${hre.ethers.utils.formatEther(newTotalMined)} GOLD`);
+  console.log(`\nNew balance: ${ethers.formatEther(newBalance)} GOLD`);
+  console.log(`New miner stats: ${ethers.formatEther(newMinerStats)} GOLD`);
+  console.log(`New total mined: ${ethers.formatEther(newTotalMined)} GOLD`);
   
   // Calculate differences
-  const balanceDiff = newBalance.sub(initialBalance);
-  const minedDiff = newTotalMined.sub(initialTotalMined);
+  const balanceDiff = newBalance - initialBalance;
+  const minedDiff = newTotalMined - initialTotalMined;
   
-  console.log(`\nReceived: ${hre.ethers.utils.formatEther(balanceDiff)} GOLD`);
-  console.log(`Total mined change: ${hre.ethers.utils.formatEther(minedDiff)} GOLD`);
+  console.log(`\nReceived: ${ethers.formatEther(balanceDiff)} GOLD`);
+  console.log(`Total mined change: ${ethers.formatEther(minedDiff)} GOLD`);
   
   // Get remaining supply
   const remainingSupply = await goldToken.getRemainingSupply();
-  console.log(`\nRemaining supply: ${hre.ethers.utils.formatEther(remainingSupply)} GOLD`);
+  console.log(`\nRemaining supply: ${ethers.formatEther(remainingSupply)} GOLD`);
   
   // Calculate mining progress
-  const miningProgress = (parseFloat(hre.ethers.utils.formatEther(newTotalMined)) / 
-                         parseFloat(hre.ethers.utils.formatEther(await goldToken.MAX_SUPPLY()))) * 100;
+  const maxSupply = await goldToken.MAX_SUPPLY();
+  const miningProgress = (Number(ethers.formatEther(newTotalMined)) / 
+                         Number(ethers.formatEther(maxSupply))) * 100;
   console.log(`Mining progress: ${miningProgress.toFixed(4)}%`);
 }
 

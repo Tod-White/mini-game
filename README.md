@@ -2,6 +2,43 @@
 
 A simple blockchain game where users can mine Gold tokens on the Somnia network. Each mining action rewards the user with 1M GOLD tokens, with a total supply of 420M tokens.
 
+## Technical Development Plan
+
+### Phase 1: Smart Contract Development
+- [x] Create GoldToken.sol contract with mining functionality
+- [x] Set up Hardhat development environment
+- [x] Implement deployment scripts
+- [x] Create test-mining script
+- [ ] Deploy contract to Somnia testnet
+- [ ] Verify contract on Somnia explorer
+
+### Phase 2: Frontend Foundation
+- [ ] Set up React project structure
+- [ ] Create voxel Gold token visual component
+- [ ] Implement "MINE GOLD" button with states (ready/mining/mined-out)
+- [ ] Design wallet connection component
+- [ ] Implement responsive layout
+
+### Phase 3: Blockchain Integration
+- [ ] Connect to Somnia network (Chain ID: 50312)
+- [ ] Implement wallet connection (MetaMask/WalletConnect)
+- [ ] Set up contract interface with ethers.js
+- [ ] Implement mining transaction process
+- [ ] Handle transaction status and confirmations
+
+### Phase 4: Mining Stats & Progress
+- [ ] Create global progress bar (420M total supply)
+- [ ] Design personal mining stats component
+- [ ] Implement real-time updates via events
+- [ ] Add animation for successful mining
+- [ ] Handle "mined out" state when all tokens are claimed
+
+### Phase 5: Deployment & Launch
+- [ ] Host frontend on static hosting (GitHub Pages)
+- [ ] Add final styling and polish
+- [ ] Test on multiple devices and browsers
+- [ ] Launch and promote
+
 ## Project Structure
 
 - `/contracts` - Smart contract files 
@@ -10,13 +47,13 @@ A simple blockchain game where users can mine Gold tokens on the Somnia network.
 - `/scripts` - Deployment and utility scripts
 - `/test` - Smart contract tests
 
-## Smart Contract
+## Smart Contract Overview
 
-The GoldToken contract is an ERC-20 token with the following features:
-- Total supply of 420M tokens
-- Mining function that transfers 1M tokens per call
-- Tracking of mining statistics per user
-- Monitoring of remaining supply
+The `GoldToken` contract is an ERC-20 token with the following key features:
+- Total supply: 420,000,000 tokens
+- Mining reward: 1,000,000 tokens per mine action
+- Tracks mining statistics per user wallet
+- Monitors total mined supply and remaining tokens
 
 ## Development Setup
 
@@ -27,42 +64,56 @@ npm install
 
 2. **Configure environment**:
 ```bash
-cp .env.example .env
-# Edit .env with your private key and other settings
+# Create a .env file with your private key and other settings
+# You can use .env.example as a template
 ```
 
-3. **Test the contract**:
+3. **Deploy to Somnia testnet**:
 ```bash
-npx hardhat test
-```
-
-## Deployment
-
-1. **Deploy to Somnia testnet**:
-```bash
+npx hardhat compile
 npx hardhat run scripts/deploy.js --network somnia-testnet
 ```
 
-2. **Verify the contract**:
+4. **Verify the contract**:
 ```bash
 npx hardhat verify --network somnia-testnet YOUR_CONTRACT_ADDRESS
 ```
 
-3. **Test mining functionality**:
+5. **Test mining functionality**:
 ```bash
-# Make sure CONTRACT_ADDRESS is set in your .env file
+# After updating CONTRACT_ADDRESS in your .env file
 npx hardhat run scripts/test-mine.js --network somnia-testnet
 ```
 
-## Usage
+## Frontend Development (Planned)
 
-Once deployed, users can:
-1. Connect their wallet
-2. Click the "MINE GOLD" button
-3. Confirm the transaction
-4. Receive 1M GOLD tokens
+The UI will feature:
+1. A voxel-style "GOLD" token as the centerpiece
+2. A prominent "MINE GOLD" button that changes state during mining
+3. A progress bar showing global mining status (tokens mined/remaining)
+4. Personal mining stats for the connected user
+5. Wallet connection and network status indicators
 
-The game continues until all 420M tokens have been mined.
+## User Experience Flow
+
+1. **Arrival & Connection**
+   - User connects wallet to Somnia network
+   - UI shows global mining progress
+
+2. **Mining Process**
+   - User clicks "MINE GOLD" button
+   - Wallet prompts to sign transaction
+   - On confirmation, user receives 1M GOLD tokens
+   - Visual feedback shows success
+
+3. **Stats & Progress**
+   - User sees their total mined tokens
+   - Global progress updates in real-time
+   - As supply decreases, token visuals change
+
+4. **Completion**
+   - When all 420M tokens are mined, button shows "MINED OUT"
+   - Token visual shows depleted state
 
 ## License
 

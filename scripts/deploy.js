@@ -1,4 +1,5 @@
-// Deploy script for GoldToken contract
+// Import ethers from hardhat
+const { ethers } = require("hardhat");
 
 async function main() {
   console.log("Deploying Gold Token contract...");

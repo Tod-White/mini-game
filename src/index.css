@@ -1,0 +1,92 @@
+/* Import more cartoonish and soothing fonts */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Concert+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bubblegum+Sans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+:root {
+  --primary-color: #B19CD9;
+  --background-color-start: #5C2A9D;
+  --background-color-end: #7A4EB6;
+  --card-bg: rgba(138, 112, 190, 0.7);
+  --text-color: #fff;
+  --accent-color: #FFB6C1;
+  --accent-dark: #FF9A9E;
+  --button-disabled: #555;
+  --progress-bg: rgba(74, 0, 128, 0.3);
+  --stat-card-bg: rgba(138, 112, 190, 0.5);
+  --error-color: #FF5252;
+  --success-color: #4CAF50;
+  --pending-color: #FAD0C4;
+  --network-connected: #FF9A9E;
+  --header-footer-border: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  --card-border-radius: 20px;
+  --button-border-radius: 18px;
+  --main-font: 'Varela Round', 'Segoe UI', sans-serif;
+  --heading-font: 'Baloo 2', cursive;
+  --special-font: 'Concert One', cursive;
+  --number-font: 'Bubblegum Sans', cursive;
+  --wallet-font: 'Fredoka One', cursive;
+}
+
+body {
+  margin: 0;
+  font-family: var(--main-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, var(--background-color-start), var(--background-color-end));
+  background-attachment: fixed;
+  color: var(--text-color);
+  min-height: 100vh;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--heading-font);
+  font-weight: 700;
+}
+
+.token-name {
+  font-family: var(--special-font);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+button {
+  cursor: pointer;
+  background-color: var(--primary-color);
+  color: var(--text-color);
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--button-border-radius);
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  font-family: var(--heading-font);
+  letter-spacing: 0.5px;
+}
+
+button:hover {
+  background-color: var(--accent-color);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+button:disabled {
+  background-color: var(--button-disabled);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.7;
+} 

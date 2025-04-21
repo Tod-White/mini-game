@@ -4,13 +4,13 @@ pragma solidity ^0.8.22;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
- * @title GoldToken
+ * @title KarmaToken
  * @dev Implementation of a minable ERC20 token for the mine.fun game
  */
-contract GoldToken is ERC20 {
-    // Each mining action gives 1M tokens
-    uint256 public constant TOKENS_PER_MINE = 1_000_000 * 10**18;
-    uint256 public constant MAX_SUPPLY = 420_000_000 * 10**18;
+contract KarmaToken is ERC20 {
+    // Each mining action gives 10K tokens
+    uint256 public constant TOKENS_PER_MINE = 10_000 * 10**18;
+    uint256 public constant MAX_SUPPLY = 7_770_000 * 10**18;
     uint256 public totalMined = 0;
     
     // Track individual mining stats
@@ -19,7 +19,7 @@ contract GoldToken is ERC20 {
     /**
      * @dev Constructor that initializes the token with name, symbol and mints the entire supply to the contract
      */
-    constructor() ERC20("Gold Token", "GOLD") {
+    constructor() ERC20("Karma", "KARMA") {
         // Initialize contract with total supply
         _mint(address(this), MAX_SUPPLY);
     }
@@ -29,9 +29,9 @@ contract GoldToken is ERC20 {
      * Reverts if all tokens have been mined
      */
     function mine() external {
-        require(totalMined < MAX_SUPPLY, "All gold has been mined");
+        require(totalMined < MAX_SUPPLY, "All karma has been mined");
         
-        // Transfer 1M tokens to miner
+        // Transfer 10K tokens to miner
         _transfer(address(this), msg.sender, TOKENS_PER_MINE);
         
         // Update stats
@@ -55,4 +55,4 @@ contract GoldToken is ERC20 {
     function getRemainingSupply() external view returns (uint256) {
         return MAX_SUPPLY - totalMined;
     }
-}
+} 

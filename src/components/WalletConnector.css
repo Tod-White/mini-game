@@ -1,0 +1,270 @@
+.wallet-connector {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.connect-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.connect-button {
+  background-color: transparent;
+  border: 2px solid var(--accent-color);
+  color: var(--accent-color);
+  font-weight: bold;
+  padding: 10px 24px;
+  border-radius: var(--button-border-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 0 15px rgba(177, 156, 217, 0.3);
+  letter-spacing: 0.5px;
+  font-size: 0.95rem;
+  font-family: var(--heading-font);
+}
+
+.connect-button:hover:not(:disabled) {
+  background-color: var(--accent-color);
+  color: var(--background-color-start);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(177, 156, 217, 0.5);
+}
+
+.connect-button.loading {
+  color: transparent;
+}
+
+.connect-button.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(177, 156, 217, 0.3);
+  border-top: 2px solid var(--accent-color);
+  border-right: 2px solid var(--accent-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.wallet-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  position: relative;
+}
+
+.wallet-address-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.wallet-address {
+  background-color: rgba(74, 0, 128, 0.5);
+  padding: 6px 12px;
+  border-radius: 30px;
+  font-size: 0.85rem;
+  color: white;
+  font-family: var(--wallet-font);
+  letter-spacing: 0.5px;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 8px;
+  font-weight: 400;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.logout-button {
+  background-color: rgba(255, 82, 82, 0.15);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+  border-radius: var(--button-border-radius);
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.logout-button:hover {
+  background-color: var(--error-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(255, 82, 82, 0.3);
+}
+
+.wallet-network {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  opacity: 0.9;
+  background-color: rgba(74, 0, 128, 0.3);
+  padding: 5px 10px;
+  border-radius: var(--button-border-radius);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  font-family: var(--main-font);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.wallet-network.wrong-network {
+  background-color: rgba(255, 82, 82, 0.3);
+  color: #FF5252;
+  border-color: rgba(255, 82, 82, 0.3);
+  box-shadow: 0 0 8px rgba(255, 82, 82, 0.3);
+  font-weight: bold;
+}
+
+.wallet-network:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(177, 156, 217, 0.3);
+}
+
+.wallet-network.wrong-network:hover {
+  box-shadow: 0 3px 8px rgba(255, 82, 82, 0.4);
+}
+
+.network-indicator {
+  width: 10px;
+  height: 10px;
+  background-color: var(--network-connected);
+  border-radius: 50%;
+  display: inline-block;
+  box-shadow: 0 0 8px var(--network-connected);
+  animation: pulse 2s infinite;
+}
+
+.network-indicator.wrong-network {
+  background-color: #FF5252;
+  box-shadow: 0 0 8px #FF5252;
+  animation: pulsered 2s infinite;
+}
+
+.network-error {
+  color: var(--error-color);
+  font-size: 0.75rem;
+  max-width: 200px;
+  text-align: right;
+}
+
+.disconnect-prompt {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background-color: var(--card-bg);
+  border-radius: var(--button-border-radius);
+  padding: 8px;
+  z-index: 1050;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.3s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 120px;
+}
+
+.disconnect-prompt button {
+  background-color: rgba(255, 82, 82, 0.2);
+  color: var(--error-color);
+  border: 1px solid var(--error-color);
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: var(--button-border-radius);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  font-family: var(--main-font);
+}
+
+.disconnect-prompt button:hover {
+  background-color: var(--error-color);
+  color: white;
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(60, 242, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(60, 242, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(60, 242, 129, 0);
+  }
+}
+
+@keyframes pulsered {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(255, 82, 82, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 82, 82, 0);
+  }
+}
+
+@media (max-width: 480px) {
+  .wallet-address {
+    max-width: 120px;
+  }
+  
+  .logout-button {
+    font-size: 0.75rem;
+    padding: 4px 6px;
+  }
+  
+  .disconnect-prompt {
+    position: fixed;
+    top: auto;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 250px;
+    background-color: rgba(40, 0, 70, 0.95);
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+    padding: 15px;
+  }
+  
+  .disconnect-prompt button {
+    padding: 12px;
+    font-size: 1rem;
+  }
+} 

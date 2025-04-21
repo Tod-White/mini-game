@@ -1,0 +1,150 @@
+.prayer-stats {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 450px;
+}
+
+.prayer-stats h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: var(--accent-color);
+  font-size: 1.3rem;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 8px;
+}
+
+.miner-stats h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 25%;
+  width: 50%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary-color), transparent);
+  border-radius: 2px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  width: 100%;
+}
+
+.stat-card {
+  background-color: var(--stat-card-bg);
+  border-radius: 15px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  opacity: 0.7;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(177, 156, 217, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(150, 120, 210, 0.6);
+}
+
+.stat-card:hover::after {
+  opacity: 1;
+}
+
+.stat-card:hover .stat-value {
+  transform: scale(1.1);
+  color: var(--accent-color);
+  text-shadow: 0 0 10px rgba(255, 182, 193, 0.6);
+}
+
+.stat-value {
+  font-family: var(--number-font);
+  font-size: 1.5rem;
+  font-weight: 400;
+  color: var(--accent-color);
+  margin: 5px 0;
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  color: var(--text-color);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.stat-emoji {
+  font-size: 24px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 42px;
+  height: 42px;
+  background: linear-gradient(135deg, rgba(177, 156, 217, 0.3), rgba(106, 90, 205, 0.2));
+  box-shadow: 0 0 12px rgba(177, 156, 217, 0.3);
+  position: relative;
+  transition: all 0.3s ease;
+  color: var(--accent-color);
+}
+
+.stat-card:hover .stat-emoji {
+  transform: scale(1.1);
+  box-shadow: 0 0 16px rgba(177, 156, 217, 0.5);
+}
+
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .stat-card {
+    padding: 12px;
+  }
+  
+  .stat-value {
+    font-size: 1.3rem;
+  }
+}

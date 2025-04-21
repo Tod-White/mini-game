@@ -4,7 +4,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 // Load contract artifacts
-const contractJson = require('./artifacts/contracts/GoldToken.sol/GoldToken.json');
+const contractJson = require('./artifacts/contracts/KarmaToken.sol/KarmaToken.json');
 
 async function main() {
   // Check for private key
@@ -14,8 +14,30 @@ async function main() {
   }
 
   // Provider setup
-  const rpcUrl = process.env.RPC_URL || "https://dream-rpc.somnia.network";
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const rpcUrls = (process.env.RPC_URL || "https://dream-rpc.somnia.network").split(',');
+  console.log(`Trying ${rpcUrls.length} RPC endpoints...`);
+  
+  let provider;
+  let connected = false;
+  
+  // Try each RPC URL until one works
+  for (const url of rpcUrls) {
+    try {
+      provider = new ethers.providers.JsonRpcProvider(url.trim());
+      // Test the connection
+      await provider.getNetwork();
+      console.log(`Connected to RPC: ${url.trim()}`);
+      connected = true;
+      break;
+    } catch (error) {
+      console.log(`Failed to connect to RPC: ${url.trim()}`);
+    }
+  }
+  
+  if (!connected) {
+    console.error("Could not connect to any RPC endpoint. Please check your network connection and RPC URLs.");
+    process.exit(1);
+  }
   
   // Wallet setup
   const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
@@ -23,15 +45,16 @@ async function main() {
   
   // Check balance
   const balance = await provider.getBalance(wallet.address);
-  console.log(`Account balance: ${ethers.formatEther(balance)} STT`);
+  console.log(`Account balance: ${ethers.utils.formatEther(balance)} STT`);
   
-  if (balance === 0n) {
+  if (balance.isZero()) {
     console.error("Account has no balance for gas fees");
     process.exit(1);
   }
   
   // Deploy contract
-  console.log("Deploying Gold Token contract...");
+  console.log("Deploying Karma Token contract...");
+  console.log("(Supply: 7,770,000 KARMA, 10K tokens per mining action)");
   
   const factory = new ethers.ContractFactory(
     contractJson.abi, 
@@ -41,13 +64,13 @@ async function main() {
   
   try {
     const contract = await factory.deploy();
-    console.log(`Transaction hash: ${contract.deploymentTransaction().hash}`);
+    console.log(`Transaction hash: ${contract.deployTransaction.hash}`);
     console.log("Waiting for deployment confirmation...");
     
-    await contract.waitForDeployment();
-    const contractAddress = await contract.getAddress();
+    await contract.deployed();
+    const contractAddress = contract.address;
     
-    console.log(`\nGold Token deployed to: ${contractAddress}`);
+    console.log(`\nKarma Token deployed to: ${contractAddress}`);
     
     // Update .env file with the contract address
     const envFile = fs.readFileSync('.env', 'utf8');
@@ -74,4 +97,4 @@ main()
   .catch(error => {
     console.error(error);
     process.exit(1);
-  });
+  }); 

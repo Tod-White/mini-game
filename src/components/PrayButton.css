@@ -1,0 +1,126 @@
+.pray-button-container {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pray-button {
+  padding: 12px 30px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(45deg, #FF9A9E, #FAD0C4);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.1), 0 8px 16px rgba(255, 154, 158, 0.5);
+  position: relative;
+  overflow: hidden;
+  letter-spacing: 1px;
+  text-transform: capitalize;
+  font-family: var(--special-font);
+}
+
+.pray-button::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(45deg);
+  transition: all 0.3s ease;
+  opacity: 0;
+}
+
+.pray-button:hover:not(:disabled)::before {
+  opacity: 1;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+  100% {
+    transform: translate(50%, 50%) rotate(45deg);
+  }
+}
+
+.pray-button:hover:not(:disabled) {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 0 rgba(0, 0, 0, 0.1), 0 12px 20px rgba(255, 154, 158, 0.7);
+}
+
+.pray-button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1), 0 4px 8px rgba(255, 154, 158, 0.4);
+}
+
+.pray-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pray-button.praying {
+  background: linear-gradient(45deg, #A6C1EE, #FBC2EB);
+  cursor: wait;
+  animation: pulsePraying 1.5s infinite alternate;
+}
+
+@keyframes pulsePraying {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.05);
+  }
+}
+
+.pray-button.prayed-out {
+  background: #BDBBBB;
+  opacity: 0.7;
+}
+
+.praying-spinner {
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 3px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.prayed-out-message {
+  margin-top: 12px;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0 15px;
+  font-family: var(--main-font);
+  font-weight: 500;
+  background-color: rgba(255, 154, 158, 0.2);
+  padding: 8px 16px;
+  border-radius: 20px;
+}
+
+.pray-button.hidden {
+  opacity: 0;
+  pointer-events: none;
+} 

@@ -5,15 +5,15 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /**
  * @title KarmaToken
- * @dev Implementation of a minable ERC20 token for the mine.fun game
+ * @dev Implementation of a minable ERC20 token for the pray.fun game
  */
 contract KarmaToken is ERC20 {
-    // Each mining action gives 10K tokens
+    // Each prayer action gives 10K tokens
     uint256 public constant TOKENS_PER_MINE = 10_000 * 10**18;
-    uint256 public constant MAX_SUPPLY = 7_770_000 * 10**18;
+    uint256 public constant MAX_SUPPLY = 77_770_000 * 10**18;
     uint256 public totalMined = 0;
     
-    // Track individual mining stats
+    // Track individual prayer stats
     mapping(address => uint256) public minerStats;
     
     /**
@@ -31,7 +31,7 @@ contract KarmaToken is ERC20 {
     function mine() external {
         require(totalMined < MAX_SUPPLY, "All karma has been mined");
         
-        // Transfer 10K tokens to miner
+        // Transfer 10K tokens to user
         _transfer(address(this), msg.sender, TOKENS_PER_MINE);
         
         // Update stats

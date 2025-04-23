@@ -54,7 +54,7 @@ async function main() {
   
   // Deploy contract
   console.log("Deploying Karma Token contract...");
-  console.log("(Supply: 7,770,000 KARMA, 10K tokens per mining action)");
+  console.log("(Supply: 77,770,000 KARMA, 10K tokens per prayer action)");
   
   const factory = new ethers.ContractFactory(
     contractJson.abi, 

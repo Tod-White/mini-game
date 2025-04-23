@@ -19,7 +19,7 @@ module.exports = {
         network: "somnia-testnet",
         chainId: 50312,
         urls: {
-          apiURL: "https://shannon-explorer.somnia.network/api",
+          apiURL: "https://shannon-explorer.somnia.network/api/v1/contract/verify",
           browserURL: "https://shannon-explorer.somnia.network/"
         }
       }

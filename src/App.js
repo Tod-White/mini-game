@@ -31,8 +31,8 @@ function App() {
   });
   const [globalStats, setGlobalStats] = useState({
     totalMined: 0,
-    totalSupply: 7770000,
-    remainingSupply: 7770000,
+    totalSupply: 77770000,
+    remainingSupply: 77770000,
   });
   const [txHash, setTxHash] = useState(null);
   const [txStatus, setTxStatus] = useState(null);

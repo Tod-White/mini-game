@@ -25,7 +25,7 @@ const KarmaTokenABI = [
 
 // Constants
 export const SOMNIA_CHAIN_ID = 50312;
-export const CONTRACT_ADDRESS = '0xE40e64F71B280e1f9b2Fd61d38d3D0f1beaBd259';
+export const CONTRACT_ADDRESS = '0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e';
 export const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network';
 export const EXPLORER_URL = 'https://shannon-explorer.somnia.network';
 
@@ -341,8 +341,8 @@ export const getGlobalStats = async () => {
       // Return default values if there's an error
       return {
         totalMined: 0,
-        remainingSupply: 7770000,
-        totalSupply: 7770000
+        remainingSupply: 77770000,
+        totalSupply: 77770000
       };
     }
   }
@@ -363,8 +363,8 @@ export const getGlobalStats = async () => {
     // Return default values if there's an error
     return {
       totalMined: 0,
-      remainingSupply: 7770000,
-      totalSupply: 7770000
+      remainingSupply: 77770000,
+      totalSupply: 77770000
     };
   }
 };

@@ -1,6 +1,6 @@
 # pray.fun - Karma Token Prayer Game
 
-A blockchain game where users can pray for Karma tokens on the Somnia network. Each prayer action rewards the user with 10K KARMA tokens, with a total supply of 7.77M tokens.
+A blockchain game where users can pray for Karma tokens on the Somnia network. Each prayer action rewards the user with 10K KARMA tokens, with a total supply of 77.77M tokens.
 
 ## Comprehensive Development Plan
 
@@ -27,7 +27,7 @@ A blockchain game where users can pray for Karma tokens on the Somnia network. E
 - [x] Handle transaction status and confirmations
 
 ### Phase 4: Prayer Stats & Progress (Completed)
-- [x] Create global progress bar (7.77M total supply)
+- [x] Create global progress bar (77.77M total supply)
 - [x] Design personal prayer stats component
 - [x] Add animation for successful praying
 - [x] Implement real-time updates via events
@@ -48,7 +48,7 @@ pray.fun/
 │   └── KarmaToken.sol        # Main ERC-20 token contract with prayer functionality
 ├── scripts/                  # Deployment and testing scripts
 │   ├── deploy-karma.js       # Hardhat deployment script
-│   ├── test-mine-karma.js    # Script to test prayer functionality
+│   ├── test-prayer-karma.js  # Script to test prayer functionality
 │   └── deploy-karma-direct.js # Direct deployment without Hardhat
 ├── test/                     # Contract test files
 │   └── KarmaToken.test.js    # Unit tests for the KarmaToken contract
@@ -81,15 +81,15 @@ The KarmaToken contract is built on OpenZeppelin's ERC-20 implementation with th
 
 ```solidity
 contract KarmaToken is ERC20 {
-    // Each mining action gives 10K tokens
+    // Each prayer action gives 10K tokens
     uint256 public constant TOKENS_PER_MINE = 10_000 * 10**18;
-    uint256 public constant MAX_SUPPLY = 7_770_000 * 10**18;
+    uint256 public constant MAX_SUPPLY = 77_770_000 * 10**18;
     uint256 public totalMined = 0;
     
-    // Track individual mining stats
+    // Track individual prayer stats
     mapping(address => uint256) public minerStats;
     
-    // Main mining function
+    // Main prayer function
     function mine() external {
         require(totalMined < MAX_SUPPLY, "All karma has been mined");
         _transfer(address(this), msg.sender, TOKENS_PER_MINE);
@@ -107,19 +107,19 @@ contract KarmaToken is ERC20 {
   - Name: Karma
   - Symbol: KARMA
   - Decimals: 18
-  - Total Supply: 7,770,000 KARMA
+  - Total Supply: 77,770,000 KARMA
   - Prayer Reward: 10,000 KARMA per action
 
 - **Contract Events**:
-  - `Mining(address indexed miner, uint256 amount, uint256 timestamp)`
-  - `MiningExhausted(uint256 totalMined, uint256 timestamp)`
+  - `Mining(address indexed miner, uint256 amount, uint256 timestamp)` // Prayer event
+  - `MiningExhausted(uint256 totalMined, uint256 timestamp)` // Prayer exhausted event
   - Standard ERC-20 `Transfer` events
 
 - **Deployment Information**:
   - Network: Somnia Network
   - Chain ID: 50312
-  - Contract Address: 0xE40e64F71B280e1f9b2Fd61d38d3D0f1beaBd259
-  - Explorer URL: https://shannon-explorer.somnia.network/address/0xE40e64F71B280e1f9b2Fd61d38d3D0f1beaBd259
+  - Contract Address: 0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e
+  - Explorer URL: https://shannon-explorer.somnia.network/address/0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e
 
 ### Frontend Implementation
 
@@ -178,46 +178,12 @@ export const getBalance = async (address) => {...} // Get KARMA balance
 export const getGlobalStats = async () => {...}  // Get global stats
 ```
 
-### External Services and Dependencies
-
-#### Blockchain Related
-
-- **Somnia Network**:
-  - RPC URL: https://dream-rpc.somnia.network
-  - Explorer: https://shannon-explorer.somnia.network
-  - Chain ID: 50312
-  - Native Currency: STT (Somnia Token)
-
-- **Smart Contract Libraries**:
-  - OpenZeppelin Contracts (v4.9.0): Standard implementation of ERC-20 tokens
-  - ethers.js (v5.7.2): Ethereum library for contract interaction
-  - Hardhat (v2.17.0): Development environment for contract testing/deployment
-
-#### Frontend Dependencies
-
-- **React Ecosystem**:
-  - React (v18.2.0): UI library
-  - React DOM (v18.2.0): DOM-specific methods for React
-  - React Scripts (v5.0.1): Development scripts and configuration
-
-- **UI Enhancement Libraries**:
-  - None - custom styling only for lightweight implementation
-
-- **Development Tools**:
-  - dotenv: Environment variable management
-  - ESLint: Code quality maintenance
-  - Testing: Jest and React Testing Library
-
-### Integration and Workflow
-
-#### Contract-to-Frontend Integration
-
 1. Contract ABI is defined in `blockchain.js`:
 ```javascript
 const KarmaTokenABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function totalSupply() view returns (uint256)",
-  "function mine() external",
+  "function mine() external", // Prayer function
   // Additional methods...
 ];
 ```
@@ -229,8 +195,8 @@ karmaTokenContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, signer
 
 3. Contract events are subscribed to for real-time updates:
 ```javascript
-karmaTokenContract.on("Mining", (miner, amount, timestamp) => {...});
-karmaTokenContract.on("MiningExhausted", (totalMined, timestamp) => {...});
+karmaTokenContract.on("Mining", (miner, amount, timestamp) => {...}); // Prayer event
+karmaTokenContract.on("MiningExhausted", (totalMined, timestamp) => {...}); // Prayer exhausted event
 ```
 
 4. Prayer transaction flow:
@@ -281,9 +247,10 @@ npm install
 2. **Configure environment**:
 ```bash
 # Create a .env file with your private key and other settings
-PRIVATE_KEY=your_private_key_here
+PRIVATE_KEY=您的钱包私钥
 RPC_URL=https://dream-rpc.somnia.network
-CONTRACT_ADDRESS=0xE40e64F71B280e1f9b2Fd61d38d3D0f1beaBd259
+CONTRACT_ADDRESS=0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e
+EXPLORER_API_KEY=可能的API密钥
 ```
 
 3. **Start development server**:

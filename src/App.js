@@ -86,7 +86,7 @@ function App() {
           
           // Reload data if we reconnect to the correct network
           if (account) {
-            handleConnect(account);
+          handleConnect(account);
           }
         }
       });
@@ -280,7 +280,7 @@ function App() {
         setError("Please change to Somnia to proceed");
       } else {
         // Display other user-friendly error message
-        setError(error.message || "Prayer failed. Please try again later.");
+      setError(error.message || "Prayer failed. Please try again later.");
       }
       setMiningStatus('ready');
     }
@@ -407,7 +407,7 @@ function App() {
       <BackgroundParticles />
       <header className="app-header">
         <div className="logo-container">
-          <h1>pray.fun</h1>
+        <h1>pray.fun</h1>
           <span className="beta-badge">BETA</span>
         </div>
         

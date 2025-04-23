@@ -11,7 +11,7 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
   
   const hasPrayedRef = useRef(false);
   const isProcessingRef = useRef(false);
-  
+
   useEffect(() => {
     hasPrayedRef.current = false;
     isProcessingRef.current = false;
@@ -30,7 +30,7 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
       setShowPrayButton(false);
     }
   }, [status]);
-  
+
   useEffect(() => {
     setShowNetworkMessage(!isCorrectNetwork);
   }, [isCorrectNetwork]);

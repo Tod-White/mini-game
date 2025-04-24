@@ -6,6 +6,7 @@ import ProgressBar from './components/ProgressBar';
 import PrayerStats from './components/PrayerStats';
 import PrayingAnimation from './components/PrayingAnimation';
 import BackgroundParticles from './components/BackgroundParticles';
+import AllocationStats from './components/AllocationStats';
 import { 
   addNetworkSwitchListener, 
   getBalance, 
@@ -435,6 +436,14 @@ function App() {
               </div>
             )}
           </div>
+          <a 
+            href="https://x.com/MetaDogeisme" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="nav-button twitter-button"
+          >
+            Twitter
+          </a>
         </div>
         
         <WalletConnector isConnected={isConnected} account={account} onConnect={handleConnect} />
@@ -476,12 +485,15 @@ function App() {
           </div>
           
           {isConnected && (
-            <PrayerStats 
-              balance={prayerStats.balance} 
-              mined={prayerStats.mined}
-              totalMined={globalStats.totalMined}
-              totalSupply={globalStats.totalSupply}
-            />
+            <>
+              <PrayerStats 
+                balance={prayerStats.balance} 
+                mined={prayerStats.mined}
+                totalMined={globalStats.totalMined}
+                totalSupply={globalStats.totalSupply}
+              />
+              <AllocationStats />
+            </>
           )}
           
           {/* Mining success animation */}
@@ -510,7 +522,7 @@ function App() {
       <footer className="app-footer">
         <div className="footer-content">
           <p>Built with ❤️ on the <a href="https://somnia.network" target="_blank" rel="noopener noreferrer">Somnia Network</a></p>
-          <p>© 2025 pray.fun | <a href="https://shannon-explorer.somnia.network/address/0xE40e64F71B280e1f9b2Fd61d38d3D0f1beaBd259" target="_blank" rel="noopener noreferrer">Contract</a></p>
+          <p>© 2025 pray.fun</p>
         </div>
       </footer>
     </div>

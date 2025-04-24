@@ -1,0 +1,26 @@
+specVersion: 0.0.5
+schema:
+  file: schema.graphql
+dataSources:
+  - kind: ethereum
+    name: KarmaToken
+    network: somnia-testnet
+    source:
+      address: "0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e"
+      abi: KarmaToken
+      startBlock: 1
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Token
+        - Account
+        - Transfer
+      abis:
+        - name: KarmaToken
+          file: KarmaToken\abis\KarmaToken.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+      file: KarmaToken\KarmaToken.wasm

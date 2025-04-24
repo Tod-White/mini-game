@@ -1,0 +1,13 @@
+{
+  "name": "karma-token-subgraph",
+  "version": "0.1.0",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy somnia-testnet/karma-token-subgraph --node https://proxy.somnia.chain.love/graph/somnia-testnet --version-label v0.0.1 --access-token Edn8sA-H81R-HEWAeOvunBsdPECzlN6t62k7-74Pf1I="
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.51.0",
+    "@graphprotocol/graph-ts": "0.31.0"
+  }
+} 

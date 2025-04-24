@@ -513,3 +513,14 @@
     gap: 6px;
   }
 }
+
+.right-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.twitter-button {
+  text-decoration: none;
+  margin-right: 8px;
+}

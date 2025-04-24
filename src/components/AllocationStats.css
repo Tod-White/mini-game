@@ -1,0 +1,119 @@
+.allocation-stats {
+  width: 100%;
+  max-width: 550px;
+  background-color: var(--stat-card-bg);
+  border-radius: var(--card-border-radius);
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.allocation-stats h2 {
+  color: var(--accent-color);
+  font-size: 1.3rem;
+  margin: 0 0 10px 0;
+  text-align: center;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.holders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.holder-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: rgba(74, 0, 128, 0.3);
+  border-radius: 10px;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.holder-item:hover {
+  transform: translateY(-2px);
+  background-color: rgba(74, 0, 128, 0.4);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.holder-rank {
+  font-family: var(--number-font);
+  color: var(--accent-color);
+  font-size: 0.9rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.holder-address {
+  flex: 1;
+  text-align: left;
+  padding: 0 10px;
+}
+
+.holder-address a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.holder-address a:hover {
+  text-decoration: underline;
+}
+
+.holder-amount {
+  font-family: var(--number-font);
+  color: var(--accent-color);
+  font-size: 0.9rem;
+  min-width: 120px;
+  text-align: right;
+}
+
+.loading-message {
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding: 20px;
+  font-size: 0.9rem;
+}
+
+.allocation-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  text-align: center;
+}
+
+.explorer-link {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.explorer-link:hover {
+  color: #ff9db5;
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .allocation-stats {
+    padding: 15px;
+  }
+
+  .holder-item {
+    padding: 8px;
+    font-size: 0.8rem;
+  }
+
+  .holder-amount {
+    min-width: 100px;
+  }
+} 

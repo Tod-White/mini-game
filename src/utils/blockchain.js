@@ -25,7 +25,7 @@ const KarmaTokenABI = [
 
 // Constants
 export const SOMNIA_CHAIN_ID = 50312;
-export const CONTRACT_ADDRESS = '0x4DDc95c8108F997b0Cf6998a99B3d913c802d5B7';
+export const CONTRACT_ADDRESS = '0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e';
 export const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network';
 export const EXPLORER_URL = 'https://shannon-explorer.somnia.network';
 
@@ -455,4 +455,9 @@ export const prayForKarma = async () => {
       throw error; // Other errors remain unchanged
     }
   };
+};
+
+// Get top holders
+export const getTopHolders = async () => {
+  return []; // Return empty array as we're not using this anymore
 }; 

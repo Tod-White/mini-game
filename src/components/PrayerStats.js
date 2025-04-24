@@ -1,7 +1,7 @@
 import React from 'react';
 import './PrayerStats.css';
 
-const PrayerStats = ({ balance, mined, totalMined, totalSupply }) => {
+const PrayerStats = ({ confirmed, pending, total, balance, totalMined, pendingPrayers, totalSupply }) => {
   const formatNumber = (num) => {
     // Convert to number if it's a string
     const numValue = typeof num === 'string' ? parseFloat(num) : num;
@@ -13,9 +13,9 @@ const PrayerStats = ({ balance, mined, totalMined, totalSupply }) => {
     return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
   
-  // Calculate percentage of total supply mined by this user
+  // Calculate percentage of total supply prayed for by this user
   const percentOfTotal = totalSupply > 0 
-    ? ((mined / totalSupply) * 100).toFixed(2) 
+    ? (((confirmed + pending) / totalSupply) * 100).toFixed(2) 
     : '0.00';
     
   return (
@@ -33,7 +33,7 @@ const PrayerStats = ({ balance, mined, totalMined, totalSupply }) => {
             </svg>
           </div>
           <div className="stat-value">{formatNumber(balance)}</div>
-          <div className="stat-label">Karma Balance</div>
+          <div className="stat-label">Faith Balance</div>
         </div>
         
         <div className="stat-card">
@@ -42,7 +42,12 @@ const PrayerStats = ({ balance, mined, totalMined, totalSupply }) => {
               <path d="M17 2.99982C17 2.99982 13 2.99982 12 6.99982C11 2.99982 7 2.99982 7 2.99982C4 2.99982 2 4.99982 2 7.99982C2 15.9998 12 20.9998 12 20.9998C12 20.9998 22 15.9998 22 7.99982C22 4.99982 20 2.99982 17 2.99982Z" stroke="#B19CD9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-          <div className="stat-value">{formatNumber(mined)}</div>
+          <div className="stat-value">
+            {formatNumber(confirmed)}
+            {pending > 0 && (
+              <span className="pending-prayers">(+{formatNumber(pending)} pending)</span>
+            )}
+          </div>
           <div className="stat-label">Total Prayed</div>
         </div>
         
@@ -56,8 +61,14 @@ const PrayerStats = ({ balance, mined, totalMined, totalSupply }) => {
           <div className="stat-label">of Global Supply</div>
         </div>
       </div>
+      
+      {pending > 0 && (
+        <div className="pending-notice">
+          You have {formatNumber(pending)} Faith tokens pending. These will be credited to your wallet in the next batch processing.
+        </div>
+      )}
     </div>
   );
 };
 
-export default PrayerStats; 
+export default PrayerStats;

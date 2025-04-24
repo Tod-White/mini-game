@@ -1,7 +1,13 @@
 import { ethers } from 'ethers';
+import { 
+  recordPrayer, 
+  getUserPrayerStats, 
+  getGlobalPrayerStats, 
+  subscribeToBatchEvents 
+} from './etherbaseClient';
 
 // Contract ABI - replace with the actual ABI from your compiled contract
-const KarmaTokenABI = [
+const FaithTokenABI = [
   // Read-only functions
   "function balanceOf(address owner) view returns (uint256)",
   "function totalSupply() view returns (uint256)",
@@ -9,23 +15,22 @@ const KarmaTokenABI = [
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
   
-  // Mining functions
-  "function mine() external",
-  "function getMinerStats(address miner) external view returns (uint256)",
+  // Faith token functions
+  "function getPrayerStats(address user) external view returns (uint256)",
   "function getRemainingSupply() external view returns (uint256)",
   "function totalMined() external view returns (uint256)",
-  "function TOKENS_PER_MINE() external view returns (uint256)",
+  "function TOKENS_PER_PRAYER() external view returns (uint256)",
   "function MAX_SUPPLY() external view returns (uint256)",
   
   // Events
   "event Transfer(address indexed from, address indexed to, uint256 value)",
-  "event Mining(address indexed miner, uint256 amount, uint256 timestamp)",
-  "event MiningExhausted(uint256 totalMined, uint256 timestamp)"
+  "event PrayerProcessed(address indexed user, uint256 amount, uint256 timestamp)",
+  "event BatchProcessed(uint256 userCount, uint256 totalAmount, uint256 timestamp)"
 ];
 
 // Constants
 export const SOMNIA_CHAIN_ID = 50312;
-export const CONTRACT_ADDRESS = '0x4DDc95c8108F997b0Cf6998a99B3d913c802d5B7';
+export const CONTRACT_ADDRESS = '0x4DDc95c8108F997b0Cf6998a99B3d913c802d5B7'; // Update with FaithToken address
 export const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network';
 export const EXPLORER_URL = 'https://shannon-explorer.somnia.network';
 
@@ -52,17 +57,18 @@ export const SOMNIA_NETWORK_PARAMS = {
 // Provider and contract setup
 let provider;
 let signer;
-let karmaTokenContract;
+let faithTokenContract;
 let networkSwitchListeners = [];
+let currentAccount = null;
 
 // Transaction listeners
 const transactionListeners = {};
 
 // Event listeners
 const eventListeners = {
-  mining: [],
+  prayer: [],
   transfer: [],
-  exhausted: []
+  batchProcessed: []
 };
 
 // Check if MetaMask is installed
@@ -79,6 +85,7 @@ export const initBlockchain = async () => {
   try {
     // Request account access
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    currentAccount = accounts[0];
     
     // Set up provider and signer
     provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -104,7 +111,7 @@ export const initBlockchain = async () => {
     }
     
     // Initialize contract connection
-    karmaTokenContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, signer);
+    faithTokenContract = new ethers.Contract(CONTRACT_ADDRESS, FaithTokenABI, signer);
     
     // Set up event listeners
     setupEventListeners();
@@ -122,25 +129,25 @@ export const initBlockchain = async () => {
 
 // Set up event listeners
 const setupEventListeners = () => {
-  if (!karmaTokenContract) return;
+  if (!faithTokenContract) return;
   
-  // Mining event
-  karmaTokenContract.on("Mining", (miner, amount, timestamp) => {
+  // PrayerProcessed event
+  faithTokenContract.on("PrayerProcessed", (user, amount, timestamp) => {
     const event = {
-      miner,
+      user,
       amount: ethers.utils.formatUnits(amount, 18),
       timestamp: timestamp.toNumber(),
       date: new Date(timestamp.toNumber() * 1000)
     };
     
-    console.log("Prayer event:", event);
+    console.log("Prayer processed event:", event);
     
     // Notify all listeners
-    eventListeners.mining.forEach(callback => callback(event));
+    eventListeners.prayer.forEach(callback => callback(event));
   });
   
   // Transfer event
-  karmaTokenContract.on("Transfer", (from, to, value) => {
+  faithTokenContract.on("Transfer", (from, to, value) => {
     const event = {
       from,
       to,
@@ -153,18 +160,19 @@ const setupEventListeners = () => {
     eventListeners.transfer.forEach(callback => callback(event));
   });
   
-  // MiningExhausted event
-  karmaTokenContract.on("MiningExhausted", (totalMined, timestamp) => {
+  // BatchProcessed event
+  faithTokenContract.on("BatchProcessed", (userCount, totalAmount, timestamp) => {
     const event = {
-      totalMined: ethers.utils.formatUnits(totalMined, 18),
+      userCount: userCount.toNumber(),
+      totalAmount: ethers.utils.formatUnits(totalAmount, 18),
       timestamp: timestamp.toNumber(),
       date: new Date(timestamp.toNumber() * 1000)
     };
     
-    console.log("Prayer exhausted event:", event);
+    console.log("Batch processed event:", event);
     
     // Notify all listeners
-    eventListeners.exhausted.forEach(callback => callback(event));
+    eventListeners.batchProcessed.forEach(callback => callback(event));
   });
 };
 
@@ -178,7 +186,7 @@ export const subscribeToEvent = (eventName, callback) => {
   eventListeners[eventName].push(callback);
   
   // Initialize event listeners if not already done
-  if (karmaTokenContract && eventListeners[eventName].length === 1) {
+  if (faithTokenContract && eventListeners[eventName].length === 1) {
     setupEventListeners();
   }
 };
@@ -300,159 +308,121 @@ export const switchToSomniaNetwork = async () => {
   }
 };
 
-// Get balance
+// Get confirmed balance from the blockchain
 export const getBalance = async (address) => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+  if (!faithTokenContract) throw new Error("Contract not initialized");
   
-  const balance = await karmaTokenContract.balanceOf(address);
+  const balance = await faithTokenContract.balanceOf(address);
   return ethers.utils.formatUnits(balance, 18);
 };
 
-// Get miner stats
-export const getMinerStats = async (address) => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+// Get user's prayer stats from the blockchain
+export const getPrayerStats = async (address) => {
+  if (!faithTokenContract) throw new Error("Contract not initialized");
   
-  const stats = await karmaTokenContract.getMinerStats(address);
+  const stats = await faithTokenContract.getPrayerStats(address);
   return ethers.utils.formatUnits(stats, 18);
+};
+
+// Get combined user stats (both blockchain and Etherbase)
+export const getUserStats = async (address) => {
+  try {
+    // Get confirmed stats from blockchain
+    const confirmedStats = await getPrayerStats(address);
+    const balance = await getBalance(address);
+    
+    // Get pending stats from Etherbase
+    const etherbaseStats = await getUserPrayerStats(address);
+    
+    return {
+      confirmedPrayers: parseFloat(confirmedStats),
+      pendingPrayers: etherbaseStats.pendingPrayers,
+      totalPrayers: etherbaseStats.totalPrayers,
+      balance: parseFloat(balance),
+      lastPrayTime: etherbaseStats.lastPrayTime,
+      lastClaimTime: etherbaseStats.lastClaimTime
+    };
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    return {
+      confirmedPrayers: 0,
+      pendingPrayers: 0,
+      totalPrayers: 0,
+      balance: 0,
+      lastPrayTime: 0,
+      lastClaimTime: 0
+    };
+  }
 };
 
 // Get global statistics
 export const getGlobalStats = async () => {
-  // Initialize a read-only provider for non-authenticated users
-  const readOnlyProvider = new ethers.providers.JsonRpcProvider(SOMNIA_RPC_URL);
-  
-  if (!karmaTokenContract) {
-    console.log("Using read-only contract for global stats");
-    const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, readOnlyProvider);
-    
-    try {
-      // Get statistics from the contract
-      const totalMined = await readOnlyContract.totalMined();
-      const remainingSupply = await readOnlyContract.getRemainingSupply();
-      const totalSupply = await readOnlyContract.MAX_SUPPLY();
-      
-      return {
-        totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
-        remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
-        totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
-      };
-    } catch (error) {
-      console.error("Error fetching global stats:", error);
-      // Return default values if there's an error
-      return {
-        totalMined: 0,
-        remainingSupply: 77770000,
-        totalSupply: 77770000
-      };
-    }
-  }
-  
   try {
+    // Initialize a read-only provider for non-authenticated users
+    const readOnlyProvider = new ethers.providers.JsonRpcProvider(SOMNIA_RPC_URL);
+    
+    // Use read-only contract if main contract isn't initialized
+    const contract = faithTokenContract || new ethers.Contract(CONTRACT_ADDRESS, FaithTokenABI, readOnlyProvider);
+    
     // Get statistics from the contract
-    const totalMined = await karmaTokenContract.totalMined();
-    const remainingSupply = await karmaTokenContract.getRemainingSupply();
-    const totalSupply = await karmaTokenContract.MAX_SUPPLY();
+    const totalMined = await contract.totalMined();
+    const remainingSupply = await contract.getRemainingSupply();
+    const totalSupply = await contract.MAX_SUPPLY();
+    
+    // Get Etherbase global stats
+    const etherbaseStats = await getGlobalPrayerStats();
     
     return {
       totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
       remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
-      totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
+      totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18)),
+      pendingPrayers: etherbaseStats.totalPendingPrayers,
+      processedPrayers: etherbaseStats.totalProcessedPrayers,
+      batches: etherbaseStats.batches
     };
   } catch (error) {
     console.error("Error fetching global stats:", error);
     // Return default values if there's an error
     return {
       totalMined: 0,
-      remainingSupply: 77770000,
-      totalSupply: 77770000
+      remainingSupply: 666666666,
+      totalSupply: 666666666,
+      pendingPrayers: 0,
+      processedPrayers: 0,
+      batches: 0
     };
   }
 };
 
-// Subscribe to transaction status updates
-export const subscribeToTransaction = (txHash, callback) => {
-  if (!txHash) return;
+// Subscribe to batch processing
+export const subscribeToBatchProcessing = (callback) => {
+  // Subscribe to batch events via Etherbase
+  const { error } = subscribeToBatchEvents((event) => {
+    if (callback) {
+      callback(event);
+    }
+  });
   
-  transactionListeners[txHash] = callback;
-  
-  // Start tracking the transaction
-  trackTransaction(txHash);
-};
-
-// Unsubscribe from transaction updates
-export const unsubscribeFromTransaction = (txHash) => {
-  if (transactionListeners[txHash]) {
-    delete transactionListeners[txHash];
+  if (error) {
+    console.error("Error subscribing to batch processing:", error);
   }
+  
+  // Also subscribe to contract events for confirmed batch processing
+  subscribeToEvent('batchProcessed', callback);
 };
 
-// Track transaction status
-const trackTransaction = async (txHash) => {
-  if (!provider) return;
+// Pray for Faith tokens (using Etherbase)
+export const prayForFaith = async () => {
+  if (!currentAccount) throw new Error("Wallet not connected");
   
   try {
-    // Initial status update - pending
-    if (transactionListeners[txHash]) {
-      transactionListeners[txHash]({
-        status: TX_STATUS.PENDING,
-        txHash,
-        confirmations: 0
-      });
-    }
+    // Record prayer in Etherbase
+    await recordPrayer(currentAccount);
     
-    // Wait for transaction to be mined
-    const receipt = await provider.waitForTransaction(txHash);
-    
-    // Check if transaction was successful
-    const status = receipt.status === 1 ? TX_STATUS.CONFIRMED : TX_STATUS.FAILED;
-    
-    // Notify listener
-    if (transactionListeners[txHash]) {
-      transactionListeners[txHash]({
-        status,
-        txHash,
-        confirmations: 1,
-        receipt
-      });
-    }
-  } catch (error) {
-    console.error("Transaction tracking error:", error);
-    if (transactionListeners[txHash]) {
-      // Provide more user-friendly error messages
-      let userFriendlyError = "Transaction failed. Please try again later.";
-      
-      if (error.message.includes("transaction receipt not found")) {
-        userFriendlyError = "Blockchain network is busy. Your transaction timed out. Please try again later.";
-      }
-      
-      transactionListeners[txHash]({
-        status: TX_STATUS.FAILED,
-        txHash,
-        error: userFriendlyError
-      });
-    }
-  }
-};
-
-// Pray for karma tokens
-export const prayForKarma = async () => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
-  
-  try {
-    const tx = await karmaTokenContract.mine();
-    
-    // Return just the transaction hash, not an object
-    return tx.hash;
+    // Return success - no transaction hash since we're not submitting a blockchain transaction
+    return { success: true };
   } catch (error) {
     console.error("Prayer error:", error);
-    
-    // Provide more user-friendly error messages
-    if (error.code === "ACTION_REJECTED") {
-      throw new Error("Prayer requires your signature to confirm the transaction. Please confirm in your wallet to continue.");
-    } else if (error.message.includes("insufficient funds")) {
-      throw new Error("Your account has insufficient funds to pay for transaction fees. Please ensure you have enough STT.");
-    } else {
-      throw error; // Other errors remain unchanged
-    }
-  };
-}; 
+    throw error;
+  }
+};

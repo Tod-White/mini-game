@@ -1,8 +1,59 @@
-# pray.fun - Karma Token Prayer Game
+# pray.fun - Faith Token Prayer Game
+
+A blockchain game where users can pray for Faith tokens on the Somnia network. This project began as the Karma Token game and has now been updated to Faith Token with improved architecture.
+
+## Faith Token Update (April 2025)
+
+The project has been updated with a new Faith Token implementation that makes significant improvements to the user experience and technical architecture:
+
+### Key Changes
+
+- **New Token**: Faith Token replaces Karma Token, with a total supply of 666,666,666 tokens
+- **Improved UX**: Users only need to sign once to authorize the application, then can pray multiple times without transaction signing
+- **Efficient Distribution**: Each prayer grants 1 Faith token, delivered through efficient batch processing
+- **Enhanced Animation**: "Faith+1" animation appears once per prayer, providing immediate feedback
+- **Blockchain Efficiency**: Batched transactions reduce gas costs and blockchain congestion
+- **Etherbase Integration**: Uses Etherbase for real-time state management between prayers and confirmations
+
+### New Architecture Components
+
+#### Smart Contracts
+- **FaithToken.sol**: New ERC-20 token with batch processing support
+- **BatchProcessor.sol**: Manages batched prayer processing
+
+#### Backend Services
+- **Etherbase Integration**: Tracks prayer state between blockchain confirmations
+- **Batch Processing Service**: Runs on a schedule to process prayers in efficient batches
+
+#### Frontend Enhancements
+- **Pending Prayer Display**: Shows both pending and confirmed tokens
+- **Streamlined Prayer Flow**: Each click produces one animation and records one prayer
+
+### New Development Plan
+
+#### Phase 6: Faith Token Implementation (Completed)
+- [x] Create FaithToken smart contract with batch processing support
+- [x] Implement BatchProcessor contract
+- [x] Integrate Etherbase for state management
+- [x] Update frontend for Faith token visualization
+- [x] Modify prayer animation to show one "Faith+1" per click
+
+#### Phase 7: Batch Processing System (Completed)
+- [x] Create batch processing service
+- [x] Implement scheduled batch execution
+- [x] Add state synchronization between Etherbase and blockchain
+- [x] Display pending and confirmed token counts
+
+#### Phase 8: Deployment & Launch (Next)
+- [ ] Deploy Etherbase Source contract
+- [ ] Deploy Faith Token and Batch Processor contracts
+- [ ] Set up batch processing service on server
+- [ ] Host updated frontend on static hosting
+- [ ] Launch and promote
+
+## Original Karma Token Implementation
 
 A blockchain game where users can pray for Karma tokens on the Somnia network. Each prayer action rewards the user with 10K KARMA tokens, with a total supply of 77.77M tokens.
-
-## Comprehensive Development Plan
 
 ### Phase 1: Smart Contract Development (Completed)
 - [x] Create KarmaToken.sol contract with praying functionality
@@ -33,25 +84,30 @@ A blockchain game where users can pray for Karma tokens on the Somnia network. E
 - [x] Implement real-time updates via events
 - [x] Handle "prayed out" state when all tokens are claimed
 
-### Phase 5: Deployment & Launch (Next)
-- [ ] Host frontend on static hosting
-- [ ] Add final styling and polish
-- [ ] Test on multiple devices and browsers
-- [ ] Launch and promote
+### Phase 5: Deployment & Launch (Completed)
+- [x] Host frontend on static hosting
+- [x] Add final styling and polish
+- [x] Test on multiple devices and browsers
+- [x] Launch and promote
 
 ## Technical Architecture Summary
 
-### Project Structure
+### Updated Project Structure
 
 pray.fun/
 ├── contracts/                # Smart contract source files
-│   └── KarmaToken.sol        # Main ERC-20 token contract with prayer functionality
+│   ├── KarmaToken.sol        # Original ERC-20 token contract with prayer functionality
+│   ├── FaithToken.sol        # New ERC-20 token with batch processing support
+│   └── BatchProcessor.sol    # Contract for processing prayers in batches
 ├── scripts/                  # Deployment and testing scripts
-│   ├── deploy-karma.js       # Hardhat deployment script
-│   ├── test-prayer-karma.js  # Script to test prayer functionality
-│   └── deploy-karma-direct.js # Direct deployment without Hardhat
+│   ├── deploy-karma.js       # Original Hardhat deployment script
+│   ├── deploy-contracts.js   # New deployment script for Faith Token system
+│   ├── batch-processor.js    # Script to process batched prayers
+│   ├── batch-service.js      # Service to run batch processing on a schedule
+│   └── test-prayer-karma.js  # Script to test prayer functionality
 ├── test/                     # Contract test files
-│   └── KarmaToken.test.js    # Unit tests for the KarmaToken contract
+│   ├── KarmaToken.test.js    # Unit tests for the KarmaToken contract
+│   └── FaithToken.test.js    # Unit tests for the FaithToken contract
 ├── public/                   # Static assets
 │   └── image/                # Image resources including Prey.png
 ├── src/                      # React frontend source code
@@ -63,19 +119,21 @@ pray.fun/
 │   │   ├── PrayerStats.js    # Component showing user prayer statistics
 │   │   └── BackgroundParticles.js # Visual background effects
 │   ├── utils/                # Utility functions
-│   │   └── blockchain.js     # Blockchain integration for frontend
+│   │   ├── blockchain.js     # Blockchain integration for frontend
+│   │   └── etherbaseClient.js # Integration with Etherbase for state management
 │   ├── App.js                # Main React application component
 │   ├── App.css               # Application-wide styling
 │   ├── index.js              # React entry point
 │   └── index.css             # Global CSS variables and styling
 ├── hardhat.config.js         # Hardhat configuration 
 ├── package.json              # Project dependencies and scripts
+├── .env.example              # Example environment variables
 └── .env                      # Environment variables (not in repo)
 ```
 
 ### Smart Contract Architecture
 
-#### KarmaToken.sol
+#### Original: KarmaToken.sol
 
 The KarmaToken contract is built on OpenZeppelin's ERC-20 implementation with the following key features:
 
@@ -103,23 +161,42 @@ contract KarmaToken is ERC20 {
 }
 ```
 
-- **Token Specifications**:
-  - Name: Karma
-  - Symbol: KARMA
-  - Decimals: 18
-  - Total Supply: 77,770,000 KARMA
-  - Prayer Reward: 10,000 KARMA per action
+#### New: FaithToken.sol and BatchProcessor.sol
 
-- **Contract Events**:
-  - `Mining(address indexed miner, uint256 amount, uint256 timestamp)` // Prayer event
-  - `MiningExhausted(uint256 totalMined, uint256 timestamp)` // Prayer exhausted event
-  - Standard ERC-20 `Transfer` events
+The FaithToken system consists of two contracts that work together:
 
-- **Deployment Information**:
-  - Network: Somnia Network
-  - Chain ID: 50312
-  - Contract Address: 0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e
-  - Explorer URL: https://shannon-explorer.somnia.network/address/0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e
+```solidity
+contract FaithToken is ERC20, Ownable {
+    // Each prayer action gives 1 token
+    uint256 public constant TOKENS_PER_PRAYER = 1 * 10**18;
+    uint256 public constant MAX_SUPPLY = 666_666_666 * 10**18;
+    uint256 public totalMined = 0;
+    
+    // Track individual prayer stats
+    mapping(address => uint256) public prayerStats;
+    
+    // Batch processor address
+    address public batchProcessor;
+    
+    // Process a batch of prayers
+    function processBatch(address[] calldata users, uint256[] calldata amounts) external {
+        require(msg.sender == batchProcessor, "Only batch processor can process prayers");
+        // Process multiple prayers in a single transaction
+        // ...
+    }
+}
+
+contract BatchProcessor is Ownable {
+    // Faith token contract
+    FaithToken public faithToken;
+    
+    // Process batches of prayers
+    function processBatch(address[] calldata users, uint256[] calldata amounts) external onlyOwner {
+        // Validate the batch
+        // Submit the batch to the Faith token contract
+    }
+}
+```
 
 ### Frontend Implementation
 
@@ -135,109 +212,62 @@ The frontend is built using React with a component-based architecture:
 - **PrayingAnimation.js**: Animation for successful prayer confirmation
 - **BackgroundParticles.js**: Visual background particles for aesthetics
 
-#### Styling System
+#### Etherbase Integration
 
-The project uses a custom CSS approach with:
+The new Faith Token implementation uses Etherbase for state management:
 
-- **Global CSS Variables**: Defined in `index.css` for consistent theming
-  ```css
-  :root {
-    --primary-color: #B19CD9;
-    --background-color-start: #5C2A9D;
-    --background-color-end: #7A4EB6;
-    --card-bg: rgba(138, 112, 190, 0.7);
-    --accent-color: #FFB6C1;
-    /* Additional design tokens... */
+```javascript
+// EtherbaseProvider wraps the application
+<EtherbaseProvider config={etherbaseConfig}>
+  <App />
+</EtherbaseProvider>
+
+// Record a prayer in Etherbase
+export const prayForFaith = async () => {
+  // Record the prayer in Etherbase state
+  await recordPrayer(userAddress);
+  
+  // This doesn't require a blockchain transaction
+  return { success: true };
+};
+
+// Display both pending and confirmed tokens
+<PrayerStats 
+  confirmed={prayerStats.confirmedPrayers}
+  pending={prayerStats.pendingPrayers}
+  total={prayerStats.totalPrayers}
+  balance={prayerStats.balance}
+/>
+```
+
+#### Batch Processing
+
+The batch processing system runs on a schedule:
+
+```javascript
+// Schedule regular batch processing
+cron.schedule('*/15 * * * *', async () => {
+  console.log('Running scheduled batch processing');
+  await processBatches();
+});
+
+// Process batches of prayers
+async function processBatches() {
+  // Get all pending prayers from Etherbase
+  const pendingPrayers = await getPendingPrayers();
+  
+  // Group into batches of up to 100 prayers
+  const batches = createBatches(pendingPrayers, 100);
+  
+  // Process each batch
+  for (const batch of batches) {
+    await batchProcessor.processBatch(batch.users, batch.amounts);
+    await updateEtherbaseState(batch);
   }
-  ```
-
-- **Component-specific CSS**: Each component has its own CSS file (e.g., PrayerHands.css)
-- **Responsive Design**: Media queries for different screen sizes
-- **Animation Systems**: Custom keyframe animations for interactions
-- **Font Integration**: Google Fonts for specialized typography
-  - Baloo 2 for headings
-  - Varela Round for main text
-  - Bubblegum Sans for numbers
-  - Concert One for special elements
-
-#### Blockchain Integration
-
-The blockchain integration is handled through `utils/blockchain.js` which provides:
-
-- **Wallet Connection**: Using ethers.js for MetaMask integration
-- **Contract Interaction**: ABI interface with KarmaToken contract
-- **Transaction Management**: Monitoring transaction states
-- **Event Subscription**: Real-time updates from contract events
-- **Network Management**: Chain detection and switching
-
-```javascript
-// Key integration functions
-export const initBlockchain = async () => {...}  // Initialize connection
-export const prayForKarma = async () => {...}    // Main praying function
-export const getBalance = async (address) => {...} // Get KARMA balance
-export const getGlobalStats = async () => {...}  // Get global stats
+}
 ```
 
-1. Contract ABI is defined in `blockchain.js`:
-```javascript
-const KarmaTokenABI = [
-  "function balanceOf(address owner) view returns (uint256)",
-  "function totalSupply() view returns (uint256)",
-  "function mine() external", // Prayer function
-  // Additional methods...
-];
-```
-
-2. Contract instance is created using ethers.js:
-```javascript
-karmaTokenContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, signer);
-```
-
-3. Contract events are subscribed to for real-time updates:
-```javascript
-karmaTokenContract.on("Mining", (miner, amount, timestamp) => {...}); // Prayer event
-karmaTokenContract.on("MiningExhausted", (totalMined, timestamp) => {...}); // Prayer exhausted event
-```
-
-4. Prayer transaction flow:
-   - UI triggers `prayForKarma()` function
-   - Transaction is sent to the blockchain
-   - UI shows pending state
-   - Event listeners update UI on confirmation
-   - Stats are refreshed automatically
-
-#### Development Workflow
-
-1. **Local Development**:
-   ```bash
-   npm start              # Start local React development server
-   npx hardhat compile    # Compile smart contracts
-   npx hardhat test       # Run contract tests
-   ```
-
-2. **Contract Deployment**:
-   ```bash
-   node deploy-karma-direct.js  # Deploy contract directly
-   # OR
-   npx hardhat run scripts/deploy-karma.js --network somnia-testnet
-   ```
-
-3. **Frontend Deployment**:
-   ```bash
-   npm run build  # Build production-ready frontend
-   # Deploy build directory to static hosting
-   ```
-
-### Future Extensibility
-
-The project is designed for easy extensibility:
-
-1. **Multiple Prayer Tokens**: The architecture could support multiple token types
-2. **Enhanced Animations**: The animation system is ready for more complex visuals
-3. **Additional Stats**: The contract tracks data that could be visualized in more detail
-4. **Social Features**: Integration with social sharing could be added
-
-## Development Setup
+### Development Setup
 
 1. **Install dependencies**:
 ```bash
@@ -246,16 +276,27 @@ npm install
 
 2. **Configure environment**:
 ```bash
-# Create a .env file with your private key and other settings
-PRIVATE_KEY=您的钱包私钥
+# Create a .env file with your settings
+FAITH_TOKEN_ADDRESS=your_faith_token_address
+BATCH_PROCESSOR_ADDRESS=your_batch_processor_address
+ETHERBASE_SOURCE_ADDRESS=your_etherbase_source_address
+PRIVATE_KEY=your_wallet_private_key
 RPC_URL=https://dream-rpc.somnia.network
-CONTRACT_ADDRESS=0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e
-EXPLORER_API_KEY=可能的API密钥
 ```
 
 3. **Start development server**:
 ```bash
 npm start
+```
+
+4. **Deploy contracts**:
+```bash
+npm run deploy-contracts
+```
+
+5. **Start batch processor service**:
+```bash
+node scripts/batch-service.js
 ```
 
 ## License

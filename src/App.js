@@ -6,41 +6,41 @@ import ProgressBar from './components/ProgressBar';
 import PrayerStats from './components/PrayerStats';
 import PrayingAnimation from './components/PrayingAnimation';
 import BackgroundParticles from './components/BackgroundParticles';
+import { EtherbaseProvider } from './utils/etherbaseClient';
 import { 
   addNetworkSwitchListener, 
-  getBalance, 
-  getMinerStats, 
+  getUserStats, 
   getGlobalStats, 
-  prayForKarma,
-  subscribeToTransaction,
-  unsubscribeFromTransaction,
-  subscribeToEvent,
-  unsubscribeFromEvent,
+  prayForFaith,
+  subscribeToBatchProcessing,
   TX_STATUS,
-  EXPLORER_URL 
+  EXPLORER_URL,
+  initBlockchain
 } from './utils/blockchain';
 
 function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [account, setAccount] = useState('');
-  const [prayingStatus, setMiningStatus] = useState('ready'); // ready, praying, prayed-out
-  const [prayProgress, setMiningProgress] = useState(0); // 0-100
-  const [prayerStats, setMinerStats] = useState({
+  const [prayingStatus, setPrayingStatus] = useState('ready'); // ready, praying, prayed-out
+  const [prayProgress, setPrayProgress] = useState(0); // 0-100
+  const [prayerStats, setPrayerStats] = useState({
+    confirmedPrayers: 0,
+    pendingPrayers: 0,
+    totalPrayers: 0,
     balance: 0,
-    mined: 0,
   });
   const [globalStats, setGlobalStats] = useState({
     totalMined: 0,
-    totalSupply: 77770000,
-    remainingSupply: 77770000,
+    totalSupply: 666666666,
+    remainingSupply: 666666666,
+    pendingPrayers: 0,
+    processedPrayers: 0,
+    batches: 0
   });
   const [txHash, setTxHash] = useState(null);
   const [txStatus, setTxStatus] = useState(null);
-  // eslint-disable-next-line no-unused-vars
-  const [confirmations, setConfirmations] = useState(0);
   const [error, setError] = useState(null);
-  const [showPrayAnimation, setShowMiningAnimation] = useState(false);
-  const [recentPray, setRecentMining] = useState(null);
+  const [showPrayAnimation, setShowPrayAnimation] = useState(false);
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(true);
   const [showDeployNotice, setShowDeployNotice] = useState(false);
   const [showDocNotice, setShowDocNotice] = useState(false);
@@ -55,6 +55,9 @@ function App() {
     setAccount(connectedAccount);
     
     try {
+      // Initialize blockchain and Etherbase
+      await initBlockchain();
+      
       // Load user data
       await loadUserData(connectedAccount);
       
@@ -86,7 +89,7 @@ function App() {
           
           // Reload data if we reconnect to the correct network
           if (account) {
-          handleConnect(account);
+            handleConnect(account);
           }
         }
       });
@@ -110,42 +113,36 @@ function App() {
   // Set up blockchain event listeners
   useEffect(() => {
     if (isConnected) {
-      // Listen for praying events (anyone on the network)
-      subscribeToEvent('mining', handlePrayingEvent);
-      
-      // Listen for praying exhausted event
-      subscribeToEvent('exhausted', handlePrayingExhaustedEvent);
+      // Listen for batch processing events
+      subscribeToBatchProcessing(handleBatchProcessed);
     }
     
-    return () => {
-      // Clean up event listeners
-      unsubscribeFromEvent('mining', handlePrayingEvent);
-      unsubscribeFromEvent('exhausted', handlePrayingExhaustedEvent);
-    };
+    // No cleanup needed as subscribeToBatchProcessing handles this
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, account]);
 
-  // Clean up transaction subscription when component unmounts
-  useEffect(() => {
-    return () => {
-      if (txHash) {
-        unsubscribeFromTransaction(txHash);
-      }
-    };
-  }, [txHash]);
+  // Handle batch processing event
+  const handleBatchProcessed = (event) => {
+    console.log('Batch processed event received:', event);
+    
+    // Update stats for the current user
+    loadUserData(account);
+    
+    // Update global stats
+    loadGlobalStats();
+  };
 
-  // Load user data from blockchain
+  // Load user data
   const loadUserData = async (address) => {
     try {
-      // Get balance
-      const balance = await getBalance(address);
+      // Get combined stats (confirmed and pending)
+      const stats = await getUserStats(address);
       
-      // Get prayer stats
-      const mined = await getMinerStats(address);
-      
-      setMinerStats({
-        balance: Number(balance),
-        mined: Number(mined)
+      setPrayerStats({
+        confirmedPrayers: stats.confirmedPrayers,
+        pendingPrayers: stats.pendingPrayers,
+        totalPrayers: stats.totalPrayers,
+        balance: stats.balance
       });
     } catch (err) {
       console.error("Error loading user data:", err);
@@ -153,7 +150,7 @@ function App() {
     }
   };
 
-  // Load global stats from blockchain
+  // Load global stats
   const loadGlobalStats = async () => {
     try {
       const stats = await getGlobalStats();
@@ -162,17 +159,17 @@ function App() {
       
       // Calculate praying progress
       const progress = stats.totalSupply > 0 
-        ? (stats.totalMined / stats.totalSupply) * 100 
+        ? ((stats.totalMined + stats.pendingPrayers) / stats.totalSupply) * 100 
         : 0;
       
       // Ensure we set a valid progress value
-      setMiningProgress(progress);
+      setPrayProgress(progress);
       
       // Check if all tokens are prayed
       if (stats.remainingSupply <= 0) {
-        setMiningStatus('prayed-out');
+        setPrayingStatus('prayed-out');
         // Display a message that all tokens have been prayed for
-        setError("All Karma tokens have been prayed for! Praying is now closed.");
+        setError("All Faith tokens have been prayed for! Praying is now closed.");
       }
       
       console.log("Global stats loaded:", stats, "Progress:", progress.toFixed(2) + "%");
@@ -182,90 +179,29 @@ function App() {
     }
   };
 
-  // Handle Prayer event from blockchain
-  const handlePrayingEvent = (event) => {
-    console.log('Pray event received:', event);
-    
-    // Update recent praying info
-    setRecentMining(event);
-    
-    // Update stats if the current user prayed
-    if (event.miner.toLowerCase() === account.toLowerCase()) {
-      loadUserData(account);
-    }
-    
-    // Update global stats
-    loadGlobalStats();
-  };
-
-  // Handle PrayingExhausted event from blockchain
-  const handlePrayingExhaustedEvent = (event) => {
-    console.log('Pray exhausted event received:', event);
-    
-    // Update UI to show praying is exhausted
-    setMiningStatus('prayed-out');
-    
-    // Show a message that praying is exhausted
-    setError("All Karma tokens have been prayed for! Praying is now closed.");
-    
-    // Update global stats
-    loadGlobalStats();
-    
-    // Add celebratory animation
-    setShowMiningAnimation(true);
-  };
-
-  // Handle transaction status updates
-  const handleTransactionUpdate = (update) => {
-    console.log('Transaction update:', update);
-    
-    setTxStatus(update.status);
-    
-    // Store confirmations but we're not displaying them in the UI
-    // We can use this for debugging with ESLint disabled
-    // eslint-disable-next-line no-unused-vars
-    setConfirmations(update.confirmations || 0);
-    
-    if (update.status === TX_STATUS.CONFIRMED) {
-      // Transaction confirmed, update data
-      loadUserData(account);
-      loadGlobalStats();
-      
-      // Show praying success animation on confirmation
-      setShowMiningAnimation(true);
-      
-      // Update praying status
-      setMiningStatus('ready');
-    } else if (update.status === TX_STATUS.FAILED) {
-      // Transaction failed
-      setError(update.error || "Transaction failed. Please try again.");
-      setMiningStatus('ready');
-    }
-  };
-
-  // Handle praying
+  // Handle prayer
   const handlePray = async () => {
-    // Note: The 3-second delay already happens in the PrayerHands component
-    // before this function is called
-    
     // Set praying status to indicate we're working
-    setMiningStatus('praying');
+    setPrayingStatus('praying');
     setError(null);
     
     try {
-      // Attempt to pray for karma
-      const txHash = await prayForKarma();
-      console.log("Prayer transaction submitted:", txHash);
+      // Attempt to pray for Faith
+      const result = await prayForFaith();
+      console.log("Prayer submitted:", result);
       
-      // Update the UI to indicate prayer is in progress
-      setMiningStatus('confirming');
-      setTxHash(txHash);
+      // Prayer is recorded in Etherbase, no transaction to wait for
+      // Update the UI to show prayer is complete
+      setPrayingStatus('ready');
       
-      // Subscribe to transaction updates
-      subscribeToTransaction(txHash, handleTransactionUpdate);
+      // Update user data to show pending prayer
+      await loadUserData(account);
       
-      // We don't set showPrayAnimation here anymore
-      // It will be set when the transaction is confirmed
+      // Update global stats
+      await loadGlobalStats();
+      
+      // Show prayer success animation
+      setShowPrayAnimation(true);
     } catch (error) {
       console.error("Prayer error:", error);
       
@@ -280,13 +216,13 @@ function App() {
         setError("Please change to Somnia to proceed");
       } else {
         // Display other user-friendly error message
-      setError(error.message || "Prayer failed. Please try again later.");
+        setError(error.message || "Prayer failed. Please try again later.");
       }
-      setMiningStatus('ready');
+      setPrayingStatus('ready');
     }
   };
 
-  // Get transaction status text
+  // Get transaction status text - for backward compatibility
   const getStatusText = () => {
     if (!txStatus) return '';
     
@@ -302,7 +238,7 @@ function App() {
     }
   };
 
-  // Get transaction status class
+  // Get transaction status class - for backward compatibility
   const getStatusClass = () => {
     if (!txStatus) return '';
     
@@ -320,33 +256,10 @@ function App() {
 
   // Handle animation completion
   const handleAnimationComplete = () => {
-    setShowMiningAnimation(false);
+    setShowPrayAnimation(false);
   };
 
-  // TESTING ONLY: Simulate prayed out state
-  const simulatePrayedOut = () => {
-    setMiningStatus('prayed-out');
-    setError("TESTING: All Karma tokens have been prayed for! Praying is now closed.");
-    
-    // Update global stats to show all tokens prayed
-    setGlobalStats(prev => ({
-      ...prev,
-      remainingSupply: 0,
-      totalMined: prev.totalSupply
-    }));
-    
-    // Update praying progress to 100%
-    setMiningProgress(100);
-    
-    // Update prayer stats to show a realistic percentage
-    setMinerStats(prev => ({
-      ...prev,
-      mined: 150000, // 150K KARMA, which is about 1.9% of total supply
-      balance: 150000
-    }));
-  };
-
-  // Load global stats on initial load - update to make sure this runs first
+  // Load global stats on initial load
   useEffect(() => {
     const fetchGlobalStats = async () => {
       try {
@@ -403,117 +316,108 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <BackgroundParticles />
-      <header className="app-header">
-        <div className="logo-container">
-        <h1>pray.fun</h1>
-          <span className="beta-badge">BETA</span>
-        </div>
-        
-        <div className="nav-buttons">
-          <button className="nav-button" onClick={() => window.location.reload()}>
-            Pray
-          </button>
-          <div className="dropdown-container" ref={deployRef}>
-            <button className="nav-button" onClick={toggleDeployNotice}>
-              Deploy
+    <EtherbaseProvider config={{}}>
+      <div className="app">
+        <BackgroundParticles />
+        <header className="app-header">
+          <div className="logo-container">
+            <h1>pray.fun</h1>
+            <span className="beta-badge">BETA</span>
+          </div>
+          
+          <div className="nav-buttons">
+            <button className="nav-button" onClick={() => window.location.reload()}>
+              Pray
             </button>
-            {showDeployNotice && (
-              <div className="dropdown-notice">
-                Soon you can deploy your own pray token
-              </div>
-            )}
-          </div>
-          <div className="dropdown-container" ref={docRef}>
-            <button className="nav-button" onClick={toggleDocNotice}>
-              Documentation
-            </button>
-            {showDocNotice && (
-              <div className="dropdown-notice">
-                Coming soon
-              </div>
-            )}
-          </div>
-        </div>
-        
-        <WalletConnector isConnected={isConnected} account={account} onConnect={handleConnect} />
-      </header>
-      
-      <main className="app-main">
-        <div className="game-container">
-          <PrayerHands 
-            status={prayingStatus} 
-            onPray={handlePray} 
-            isConnected={isConnected}
-            isCorrectNetwork={isCorrectNetwork}
-            onConnectWallet={() => document.querySelector('.connect-button')?.click()}
-          />
-          
-          <div className="controls-container">
-            {error && <div className="error-message">{error}</div>}
-            
-            {txHash && txStatus && (
-              <div className={`tx-status ${getStatusClass()}`}>
-                <div className="tx-status-text">{getStatusText()}</div>
-                <a 
-                  href={`${EXPLORER_URL}/tx/${txHash}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="tx-link"
-                >
-                  View transaction
-                </a>
-              </div>
-            )}
-            
-            <ProgressBar 
-              progress={prayProgress} 
-              remaining={globalStats.remainingSupply}
-              total={globalStats.totalSupply}
-              title="Karma"
-            />
-          </div>
-          
-          {isConnected && (
-            <PrayerStats 
-              balance={prayerStats.balance} 
-              mined={prayerStats.mined}
-              totalMined={globalStats.totalMined}
-              totalSupply={globalStats.totalSupply}
-            />
-          )}
-          
-          {/* Mining success animation */}
-          {showPrayAnimation && (
-            <PrayingAnimation 
-              onComplete={handleAnimationComplete} 
-            />
-          )}
-          
-          {/* Test button - disabled */}
-          {/* 
-          {process.env.NODE_ENV === 'development' && (
-            <div className="test-controls">
-              <button 
-                onClick={simulatePrayedOut}
-                className="test-button"
-              >
-                Test: Simulate all tokens prayed out
+            <div className="dropdown-container" ref={deployRef}>
+              <button className="nav-button" onClick={toggleDeployNotice}>
+                Deploy
               </button>
+              {showDeployNotice && (
+                <div className="dropdown-notice">
+                  Soon you can deploy your own pray token
+                </div>
+              )}
             </div>
-          )}
-          */}
-        </div>
-      </main>
-      
-      <footer className="app-footer">
-        <div className="footer-content">
-          <p>Built with ❤️ on the <a href="https://somnia.network" target="_blank" rel="noopener noreferrer">Somnia Network</a></p>
-          <p>© 2025 pray.fun | <a href="https://shannon-explorer.somnia.network/address/0xE40e64F71B280e1f9b2Fd61d38d3D0f1beaBd259" target="_blank" rel="noopener noreferrer">Contract</a></p>
-        </div>
-      </footer>
-    </div>
+            <div className="dropdown-container" ref={docRef}>
+              <button className="nav-button" onClick={toggleDocNotice}>
+                Documentation
+              </button>
+              {showDocNotice && (
+                <div className="dropdown-notice">
+                  Coming soon
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <WalletConnector isConnected={isConnected} account={account} onConnect={handleConnect} />
+        </header>
+        
+        <main className="app-main">
+          <div className="game-container">
+            <PrayerHands 
+              status={prayingStatus} 
+              onPray={handlePray} 
+              isConnected={isConnected}
+              isCorrectNetwork={isCorrectNetwork}
+              onConnectWallet={() => document.querySelector('.connect-button')?.click()}
+            />
+            
+            <div className="controls-container">
+              {error && <div className="error-message">{error}</div>}
+              
+              {txHash && txStatus && (
+                <div className={`tx-status ${getStatusClass()}`}>
+                  <div className="tx-status-text">{getStatusText()}</div>
+                  <a 
+                    href={`${EXPLORER_URL}/tx/${txHash}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="tx-link"
+                  >
+                    View transaction
+                  </a>
+                </div>
+              )}
+              
+              <ProgressBar 
+                progress={prayProgress} 
+                remaining={globalStats.remainingSupply}
+                total={globalStats.totalSupply}
+                title="Faith"
+              />
+            </div>
+            
+            {isConnected && (
+              <PrayerStats 
+                confirmed={prayerStats.confirmedPrayers}
+                pending={prayerStats.pendingPrayers}
+                total={prayerStats.totalPrayers}
+                balance={prayerStats.balance}
+                totalMined={globalStats.totalMined}
+                pendingPrayers={globalStats.pendingPrayers}
+                totalSupply={globalStats.totalSupply}
+              />
+            )}
+            
+            {/* Prayer success animation */}
+            {showPrayAnimation && (
+              <PrayingAnimation 
+                onComplete={handleAnimationComplete} 
+              />
+            )}
+          </div>
+        </main>
+        
+        <footer className="app-footer">
+          <div className="footer-content">
+            <p>Built with ❤️ on the <a href="https://somnia.network" target="_blank" rel="noopener noreferrer">Somnia Network</a></p>
+            <p>© 2025 pray.fun | <a href="https://shannon-explorer.somnia.network/address/0xE40e64F71B280e1f9b2Fd61d38d3D0f1beaBd259" target="_blank" rel="noopener noreferrer">Contract</a></p>
+          </div>
+        </footer>
+      </div>
+    </EtherbaseProvider>
   );
 }
 

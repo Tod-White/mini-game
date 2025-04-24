@@ -4,13 +4,14 @@ import './PrayerHands.css';
 const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNetwork = true }) => {
   const [showPrayButton, setShowPrayButton] = useState(false);
   const [isPraying, setIsPraying] = useState(false);
-  const [karmaPoints, setKarmaPoints] = useState([]);
+  const [faithPoint, setFaithPoint] = useState(null);
   const [showingAnimation, setShowingAnimation] = useState(false);
   const [showNetworkMessage, setShowNetworkMessage] = useState(!isCorrectNetwork);
   const [isWrongNetworkVisible, setIsWrongNetworkVisible] = useState(false);
   
   const hasPrayedRef = useRef(false);
   const isProcessingRef = useRef(false);
+  const animationTimeoutRef = useRef(null);
 
   useEffect(() => {
     hasPrayedRef.current = false;
@@ -35,78 +36,40 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
     setShowNetworkMessage(!isCorrectNetwork);
   }, [isCorrectNetwork]);
   
-  const createKarmaPoints = () => {
-    const pointsCount = 10;
-    const points = [];
-    
-    const sectors = [
-      { angle: -120, radius: 110 },
-      { angle: -90, radius: 100 },
-      { angle: -60, radius: 110 },
-      { angle: -150, radius: 100 },
-      { angle: -30, radius: 100 },
-      { angle: -170, radius: 110 },
-      { angle: 170, radius: 100 },
-      { angle: 150, radius: 110 },
-    ];
-    
-    const centerX = 35;
-    const centerY = 50;
-    
-    sectors.forEach((sector, index) => {
-      const radians = (sector.angle * Math.PI) / 180;
-      
-      const x = centerX + (sector.radius * Math.cos(radians)) / 2.4;
-      const y = centerY + (sector.radius * Math.sin(radians)) / 2.4;
-      
-      const delay = index * 100 + Math.random() * 300;
-      
-      const size = Math.random() < 0.5 ? 'small' : 'medium';
-      
-      points.push({
-        id: index,
-        position: { 
-          top: `${y}%`, 
-          left: `${x}%` 
-        },
-        delay,
-        size,
-        duration: 2000 + Math.random() * 1000
-      });
-    });
-    
-    if (pointsCount > sectors.length) {
-      const additionalPoints = pointsCount - sectors.length;
-      
-      for (let i = 0; i < additionalPoints; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const radius = 90 + Math.random() * 70;
-        
-        const centerX = 35;
-        
-        const xOffset = -8 - Math.random() * 10;
-        
-        const x = centerX + (radius * Math.cos(angle)) / 2.4 + xOffset;
-        const y = centerY + (radius * Math.sin(angle)) / 2.4;
-        
-        const delay = 800 + Math.random() * 500;
-        
-        const size = Math.random() < 0.5 ? 'small' : 'medium';
-        
-        points.push({
-          id: sectors.length + i,
-          position: { 
-            top: `${y}%`, 
-            left: `${x}%` 
-          },
-          delay,
-          size,
-          duration: 2000 + Math.random() * 1000
-        });
+  // Clear any existing animation timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
       }
-    }
+    };
+  }, []);
+  
+  const createFaithPoint = () => {
+    // Get a random position for the faith point from a focused area
+    const centerX = 35; // Center X position
+    const centerY = 50; // Center Y position
     
-    return points;
+    // Random angle and radius for a circular distribution
+    const angle = Math.random() * 2 * Math.PI;
+    const radius = 80 + Math.random() * 40; // 80-120 radius range
+    
+    // Calculate X and Y positions
+    const x = centerX + (radius * Math.cos(angle)) / 2.4;
+    const y = centerY + (radius * Math.sin(angle)) / 2.4;
+    
+    // Random size (small or medium)
+    const size = Math.random() < 0.5 ? 'small' : 'medium';
+    
+    // Create and return the faith point
+    return {
+      position: { 
+        top: `${y}%`, 
+        left: `${x}%` 
+      },
+      size,
+      duration: 2000 + Math.random() * 1000 // 2-3 seconds animation duration
+    };
   };
 
   const handlePrayButtonClick = (e) => {
@@ -129,17 +92,26 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
     if (status === 'ready' && !isPraying && !hasPrayedRef.current && !showingAnimation) {
       isProcessingRef.current = true;
       
+      // Create a single faith point for this prayer
+      setFaithPoint(createFaithPoint());
       setShowingAnimation(true);
-      setKarmaPoints(createKarmaPoints());
       
-      setTimeout(() => {
-        hasPrayedRef.current = true;
-        setIsPraying(true);
-        
-        if (onPray && isProcessingRef.current) {
-          onPray();
-        }
+      // Clear any existing animation timeout
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+      
+      // Set timeout to hide the animation after 2-3 seconds
+      animationTimeoutRef.current = setTimeout(() => {
+        setShowingAnimation(false);
+        setFaithPoint(null);
+        isProcessingRef.current = false;
       }, 3000);
+      
+      // Call the pray function immediately - we don't need to wait for animation
+      if (onPray) {
+        onPray();
+      }
     }
   };
 
@@ -182,7 +154,7 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
       >
         <img 
           src="/image/Prey.png" 
-          alt="Karma Prey" 
+          alt="Faith Prayer" 
           className={`prey-image ${status}`}
         />
         
@@ -220,20 +192,19 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
         )}
       </div>
       
-      {showingAnimation && karmaPoints.map(point => (
+      {/* Single Faith+1 point animation */}
+      {showingAnimation && faithPoint && (
         <div 
-          key={point.id}
-          className={`karma-point karma-point-${point.size}`}
+          className={`faith-point faith-point-${faithPoint.size}`}
           style={{
-            top: point.position.top,
-            left: point.position.left,
-            animationDelay: `${point.delay}ms`,
-            animationDuration: `${point.duration}ms`
+            top: faithPoint.position.top,
+            left: faithPoint.position.left,
+            animationDuration: `${faithPoint.duration}ms`
           }}
         >
-          Karma+1
+          Faith+1
         </div>
-      ))}
+      )}
     </div>
   );
 };

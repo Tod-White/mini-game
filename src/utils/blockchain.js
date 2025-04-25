@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+const { ethers } = require('ethers');
 
 // Contract ABI - replace with the actual ABI from your compiled contract
 const KarmaTokenABI = [
@@ -81,8 +81,8 @@ export const initBlockchain = async () => {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     
     // Set up provider and signer
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
     
     // Get current network
     const network = await provider.getNetwork();
@@ -319,7 +319,7 @@ export const getMinerStats = async (address) => {
 // Get global statistics
 export const getGlobalStats = async () => {
   // Initialize a read-only provider for non-authenticated users
-  const readOnlyProvider = new ethers.providers.JsonRpcProvider(SOMNIA_RPC_URL);
+  const readOnlyProvider = new ethers.JsonRpcProvider(SOMNIA_RPC_URL);
   
   if (!karmaTokenContract) {
     console.log("Using read-only contract for global stats");
@@ -332,9 +332,9 @@ export const getGlobalStats = async () => {
       const totalSupply = await readOnlyContract.MAX_SUPPLY();
       
       return {
-        totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
-        remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
-        totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
+        totalMined: parseFloat(ethers.formatUnits(totalMined, 18)),
+        remainingSupply: parseFloat(ethers.formatUnits(remainingSupply, 18)),
+        totalSupply: parseFloat(ethers.formatUnits(totalSupply, 18))
       };
     } catch (error) {
       console.error("Error fetching global stats:", error);
@@ -354,9 +354,9 @@ export const getGlobalStats = async () => {
     const totalSupply = await karmaTokenContract.MAX_SUPPLY();
     
     return {
-      totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
-      remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
-      totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
+      totalMined: parseFloat(ethers.formatUnits(totalMined, 18)),
+      remainingSupply: parseFloat(ethers.formatUnits(remainingSupply, 18)),
+      totalSupply: parseFloat(ethers.formatUnits(totalSupply, 18))
     };
   } catch (error) {
     console.error("Error fetching global stats:", error);

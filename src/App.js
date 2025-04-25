@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import PrayerHands from './components/PrayerHands';
 import WalletConnector from './components/WalletConnector';
@@ -7,18 +7,25 @@ import PrayerStats from './components/PrayerStats';
 import PrayingAnimation from './components/PrayingAnimation';
 import BackgroundParticles from './components/BackgroundParticles';
 import AllocationStats from './components/AllocationStats';
+import DeployToken from './components/DeployToken';
+import Documentation from './components/Documentation';
+import Temp from './components/Temp';
 import { 
   addNetworkSwitchListener, 
   getBalance, 
   getMinerStats, 
   getGlobalStats, 
+  getTokenDetails,
+  getUserTokenStats,
+  subscribeToTokenEvents,
+  getCachedTokenDetails,
+  pray,
   prayForKarma,
   subscribeToTransaction,
   unsubscribeFromTransaction,
-  subscribeToEvent,
-  unsubscribeFromEvent,
   TX_STATUS,
-  EXPLORER_URL 
+  EXPLORER_URL,
+  CONTRACT_ADDRESS
 } from './utils/blockchain';
 
 function App() {
@@ -37,17 +44,19 @@ function App() {
   });
   const [txHash, setTxHash] = useState(null);
   const [txStatus, setTxStatus] = useState(null);
-  // eslint-disable-next-line no-unused-vars
   const [confirmations, setConfirmations] = useState(0);
   const [error, setError] = useState(null);
   const [showPrayAnimation, setShowMiningAnimation] = useState(false);
   const [recentPray, setRecentMining] = useState(null);
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(true);
-  const [showDeployNotice, setShowDeployNotice] = useState(false);
-  const [showDocNotice, setShowDocNotice] = useState(false);
+  const [currentPage, setCurrentPage] = useState('pray'); // 'pray', 'deploy', or 'docs'
+  const [selectedToken, setSelectedToken] = useState(null);
+  const [tokenDetails, setTokenDetails] = useState(null);
+  const [userTokenStats, setUserTokenStats] = useState(null);
+  const [unsubscribeTokenEvents, setUnsubscribeTokenEvents] = useState(null);
+  const [tokenParams, setTokenParams] = useState(null);
   
   // Refs for dropdown containers
-  const deployRef = useRef(null);
   const docRef = useRef(null);
 
   // Connect wallet handler
@@ -60,7 +69,7 @@ function App() {
       await loadUserData(connectedAccount);
       
       // Load global stats
-      await loadGlobalStats();
+      await loadTokenData();
     } catch (err) {
       console.error("Error loading data:", err);
       setError("Failed to load data from blockchain. Please try reconnecting.");
@@ -108,40 +117,69 @@ function App() {
     }
   }, [error, isCorrectNetwork]);
 
-  // Set up blockchain event listeners
-  useEffect(() => {
-    if (isConnected) {
-      // Listen for praying events (anyone on the network)
-      subscribeToEvent('mining', handlePrayingEvent);
-      
-      // Listen for praying exhausted event
-      subscribeToEvent('exhausted', handlePrayingExhaustedEvent);
+  // Load token data
+  const loadTokenData = useCallback(async () => {
+    if (!selectedToken) {
+      // For Karma token, use existing functions
+      try {
+        const stats = await getGlobalStats();
+        setGlobalStats(stats);
+        
+        // Calculate praying progress
+        const progress = stats.totalSupply > 0 
+          ? ((stats.totalSupply - stats.remainingSupply) / stats.totalSupply) * 100 
+          : 0;
+        
+        setMiningProgress(progress);
+        
+        if (stats.remainingSupply <= 0) {
+          setMiningStatus('prayed-out');
+          setError("All Karma tokens have been prayed for! Praying is now closed.");
+        } else if (prayingStatus === 'prayed-out') {
+          setMiningStatus('ready');
+          setError(null);
+        }
+      } catch (err) {
+        console.error("Error loading Karma stats:", err);
     }
-    
-    return () => {
-      // Clean up event listeners
-      unsubscribeFromEvent('mining', handlePrayingEvent);
-      unsubscribeFromEvent('exhausted', handlePrayingExhaustedEvent);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isConnected, account]);
+      return;
+    }
 
-  // Clean up transaction subscription when component unmounts
-  useEffect(() => {
-    return () => {
-      if (txHash) {
-        unsubscribeFromTransaction(txHash);
-      }
-    };
-  }, [txHash]);
-
-  // Load user data from blockchain
-  const loadUserData = async (address) => {
     try {
-      // Get balance
-      const balance = await getBalance(address);
+      // Get token details
+      const details = await getCachedTokenDetails(selectedToken.address);
+      setTokenDetails(details);
       
-      // Get prayer stats
+      // Update global stats
+      setGlobalStats({
+        totalMined: Number(details.totalMined),
+        remainingSupply: Number(details.remainingSupply),
+        totalSupply: Number(details.totalSupply)
+      });
+      
+      // Update progress
+      setMiningProgress(details.progress);
+      
+      // Check if prayed out
+      if (Number(details.remainingSupply) <= 0) {
+        setMiningStatus('prayed-out');
+        setError(`All ${details.name} tokens have been prayed for! Praying is now closed.`);
+      } else if (prayingStatus === 'prayed-out') {
+        setMiningStatus('ready');
+        setError(null);
+      }
+    } catch (err) {
+      console.error("Error loading token details:", err);
+      setError("Failed to load token data. Please try again later.");
+      }
+  }, [selectedToken, prayingStatus]);
+
+  // Load user data
+  const loadUserData = useCallback(async (address) => {
+    if (!selectedToken) {
+      // For Karma token, use existing functions
+      try {
+      const balance = await getBalance(address);
       const mined = await getMinerStats(address);
       
       setMinerStats({
@@ -149,39 +187,71 @@ function App() {
         mined: Number(mined)
       });
     } catch (err) {
-      console.error("Error loading user data:", err);
-      throw err;
-    }
-  };
-
-  // Load global stats from blockchain
-  const loadGlobalStats = async () => {
-    try {
-      const stats = await getGlobalStats();
-      
-      setGlobalStats(stats);
-      
-      // Calculate praying progress
-      const progress = stats.totalSupply > 0 
-        ? (stats.totalMined / stats.totalSupply) * 100 
-        : 0;
-      
-      // Ensure we set a valid progress value
-      setMiningProgress(progress);
-      
-      // Check if all tokens are prayed
-      if (stats.remainingSupply <= 0) {
-        setMiningStatus('prayed-out');
-        // Display a message that all tokens have been prayed for
-        setError("All Karma tokens have been prayed for! Praying is now closed.");
+        console.error("Error loading user Karma data:", err);
       }
-      
-      console.log("Global stats loaded:", stats, "Progress:", progress.toFixed(2) + "%");
-    } catch (err) {
-      console.error("Error loading global stats:", err);
-      throw err;
+      return;
     }
-  };
+
+    try {
+      const stats = await getUserTokenStats(address, selectedToken.address);
+      setUserTokenStats(stats);
+      
+      setMinerStats({
+        balance: Number(stats.balance),
+        mined: Number(stats.mined)
+      });
+    } catch (err) {
+      console.error("Error loading user token stats:", err);
+    }
+  }, [selectedToken]);
+      
+  // Subscribe to token events
+  useEffect(() => {
+    if (!isConnected || !selectedToken) {
+      return;
+    }
+
+    try {
+      const unsubscribe = subscribeToTokenEvents(selectedToken.address, {
+        onPrayer: handlePrayingEvent,
+        onExhausted: handlePrayingExhaustedEvent
+      });
+      
+      setUnsubscribeTokenEvents(() => unsubscribe);
+      
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+        }
+      };
+    } catch (err) {
+      console.error("Error subscribing to token events:", err);
+    }
+  }, [isConnected, selectedToken]);
+
+  // Clean up token event subscriptions
+  useEffect(() => {
+    return () => {
+      if (unsubscribeTokenEvents) {
+        unsubscribeTokenEvents();
+      }
+    };
+  }, [unsubscribeTokenEvents]);
+
+  // Load data periodically
+  useEffect(() => {
+    const loadData = async () => {
+      if (isConnected && account) {
+        await loadUserData(account);
+      }
+      await loadTokenData();
+    };
+    
+    loadData();
+    const interval = setInterval(loadData, 30000);
+    
+    return () => clearInterval(interval);
+  }, [isConnected, account, loadUserData, loadTokenData]);
 
   // Handle Prayer event from blockchain
   const handlePrayingEvent = (event) => {
@@ -196,7 +266,7 @@ function App() {
     }
     
     // Update global stats
-    loadGlobalStats();
+    loadTokenData();
   };
 
   // Handle PrayingExhausted event from blockchain
@@ -210,7 +280,7 @@ function App() {
     setError("All Karma tokens have been prayed for! Praying is now closed.");
     
     // Update global stats
-    loadGlobalStats();
+    loadTokenData();
     
     // Add celebratory animation
     setShowMiningAnimation(true);
@@ -230,7 +300,7 @@ function App() {
     if (update.status === TX_STATUS.CONFIRMED) {
       // Transaction confirmed, update data
       loadUserData(account);
-      loadGlobalStats();
+      loadTokenData();
       
       // Show praying success animation on confirmation
       setShowMiningAnimation(true);
@@ -254,8 +324,11 @@ function App() {
     setError(null);
     
     try {
-      // Attempt to pray for karma
-      const txHash = await prayForKarma();
+      // Attempt to pray for the selected token or default to Karma
+      const txHash = await (selectedToken 
+        ? pray(selectedToken.address)
+        : prayForKarma());
+        
       console.log("Prayer transaction submitted:", txHash);
       
       // Update the UI to indicate prayer is in progress
@@ -264,9 +337,6 @@ function App() {
       
       // Subscribe to transaction updates
       subscribeToTransaction(txHash, handleTransactionUpdate);
-      
-      // We don't set showPrayAnimation here anymore
-      // It will be set when the transaction is confirmed
     } catch (error) {
       console.error("Prayer error:", error);
       
@@ -347,109 +417,58 @@ function App() {
     }));
   };
 
-  // Load global stats on initial load - update to make sure this runs first
-  useEffect(() => {
-    const fetchGlobalStats = async () => {
-      try {
-        // Fetch global stats right away when the app loads
-        console.log("Fetching initial global stats...");
-        await loadGlobalStats();
-      } catch (err) {
-        console.error("Error loading global stats:", err);
+  const handleNavigate = (page, params = {}) => {
+    setCurrentPage(page);
+    if (page === 'temp' && params) {
+      setTokenParams(params);
+    } else if (page === 'pray' && params.tokenAddress && params.tokenName) {
+      setSelectedToken({
+        name: params.tokenName,
+        symbol: params.symbol || params.tokenName.split(' ')[0].toUpperCase(),
+        tokensPerPrayer: params.tokensPerPrayer || 10000,
+        address: params.tokenAddress
+      });
+      // Reset states when switching tokens
+      setMiningStatus('ready');
+      setError(null);
+      setMiningProgress(0);
+      setMinerStats({
+        balance: 0,
+        mined: 0
+      });
+      // Load new token's data
+      if (isConnected) {
+        loadUserData(account);
+        loadTokenData();
       }
-    };
-    
-    // Run immediately
-    fetchGlobalStats();
-    
-    // Set up an interval to refresh global stats every 30 seconds
-    const intervalId = setInterval(fetchGlobalStats, 30000);
-    
-    // Clean up on unmount
-    return () => clearInterval(intervalId);
-  }, []); // Empty dependency array means this runs once on mount
-
-  // Handle clicks outside the dropdowns
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (showDeployNotice && 
-          deployRef.current && 
-          !deployRef.current.contains(event.target)) {
-        setShowDeployNotice(false);
-      }
-      
-      if (showDocNotice && 
-          docRef.current && 
-          !docRef.current.contains(event.target)) {
-        setShowDocNotice(false);
+    } else if (page === 'pray') {
+      // Reset to default token when navigating to pray without params
+      setSelectedToken(null);
+      // Reset states
+      setMiningStatus('ready');
+      setError(null);
+      if (isConnected) {
+        loadUserData(account);
+        loadTokenData();
       }
     }
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDeployNotice, showDocNotice]);
-
-  // Toggle deploy notice
-  const toggleDeployNotice = () => {
-    setShowDeployNotice(prev => !prev);
-    setShowDocNotice(false);
   };
 
-  // Toggle documentation notice
-  const toggleDocNotice = () => {
-    setShowDocNotice(prev => !prev);
-    setShowDeployNotice(false);
-  };
-
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'deploy':
   return (
-    <div className="app">
-      <BackgroundParticles />
-      <header className="app-header">
-        <div className="logo-container">
-        <h1>pray.fun</h1>
-          <span className="beta-badge">BETA</span>
-        </div>
-        
-        <div className="nav-buttons">
-          <button className="nav-button" onClick={() => window.location.reload()}>
-            Pray
-          </button>
-          <div className="dropdown-container" ref={deployRef}>
-            <button className="nav-button" onClick={toggleDeployNotice}>
-              Deploy
-            </button>
-            {showDeployNotice && (
-              <div className="dropdown-notice">
-                Soon you can deploy your own pray token
-              </div>
-            )}
+          <div className="page-container">
+            <DeployToken onClose={() => handleNavigate('pray')} />
           </div>
-          <div className="dropdown-container" ref={docRef}>
-            <button className="nav-button" onClick={toggleDocNotice}>
-              Documentation
-            </button>
-            {showDocNotice && (
-              <div className="dropdown-notice">
-                Coming soon
-              </div>
-            )}
-          </div>
-          <a 
-            href="https://x.com/MetaDogeisme" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="nav-button twitter-button"
-          >
-            Twitter
-          </a>
-        </div>
-        
-        <WalletConnector isConnected={isConnected} account={account} onConnect={handleConnect} />
-      </header>
-      
-      <main className="app-main">
+        );
+      case 'docs':
+        return <Documentation onNavigate={handleNavigate} />;
+      case 'temp':
+        return <Temp {...tokenParams} />;
+      default:
+        return (
+          <>
         <div className="game-container">
           <PrayerHands 
             status={prayingStatus} 
@@ -457,6 +476,7 @@ function App() {
             isConnected={isConnected}
             isCorrectNetwork={isCorrectNetwork}
             onConnectWallet={() => document.querySelector('.connect-button')?.click()}
+                token={selectedToken}
           />
           
           <div className="controls-container">
@@ -480,43 +500,82 @@ function App() {
               progress={prayProgress} 
               remaining={globalStats.remainingSupply}
               total={globalStats.totalSupply}
-              title="Karma"
+                  title={selectedToken ? selectedToken.name : 'Karma'}
             />
           </div>
           
           {isConnected && (
-            <>
-              <PrayerStats 
-                balance={prayerStats.balance} 
-                mined={prayerStats.mined}
-                totalMined={globalStats.totalMined}
-                totalSupply={globalStats.totalSupply}
-              />
-              <AllocationStats />
-            </>
+                <>
+            <PrayerStats 
+              balance={prayerStats.balance} 
+              mined={prayerStats.mined}
+              totalMined={globalStats.totalMined}
+              totalSupply={globalStats.totalSupply}
+            />
+                  <AllocationStats />
+                </>
           )}
           
-          {/* Mining success animation */}
           {showPrayAnimation && (
             <PrayingAnimation 
               onComplete={handleAnimationComplete} 
             />
           )}
-          
-          {/* Test button - disabled */}
-          {/* 
-          {process.env.NODE_ENV === 'development' && (
-            <div className="test-controls">
-              <button 
-                onClick={simulatePrayedOut}
-                className="test-button"
-              >
-                Test: Simulate all tokens prayed out
-              </button>
             </div>
-          )}
-          */}
+          </>
+        );
+    }
+  };
+
+  return (
+    <div className="app">
+      <BackgroundParticles />
+      <header className="app-header">
+        <div className="logo-container">
+          <h1>pray.fun</h1>
+          <span className="beta-badge">BETA</span>
         </div>
+        
+        <div className="nav-buttons">
+          <button 
+            className={`nav-button ${currentPage === 'pray' ? 'active' : ''}`} 
+            onClick={() => handleNavigate('pray')}
+          >
+            Pray
+          </button>
+          <button 
+            className={`nav-button ${currentPage === 'deploy' ? 'active' : ''}`}
+            onClick={() => handleNavigate('deploy')}
+          >
+            Deploy
+          </button>
+          <button 
+            className={`nav-button ${currentPage === 'docs' ? 'active' : ''}`}
+            onClick={() => handleNavigate('docs')}
+          >
+            Documentation
+          </button>
+              <button 
+            className={`nav-button ${currentPage === 'temp' ? 'active' : ''}`}
+            onClick={() => handleNavigate('temp')}
+              >
+            Temp
+              </button>
+          <a 
+            href="https://x.com/MetaDogeisme" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="nav-button twitter-button"
+          >
+            Twitter
+          </a>
+        </div>
+        
+        <WalletConnector isConnected={isConnected} account={account} onConnect={handleConnect} />
+      </header>
+      
+      <main className="app-main">
+        {renderContent()}
       </main>
       
       <footer className="app-footer">

@@ -1,9 +1,16 @@
 import React from 'react';
 import './ProgressBar.css';
 
-const ProgressBar = ({ progress, remaining, total, title = 'Karma' }) => {
+const ProgressBar = ({ progress = 0, remaining = 0, total = 0, title = 'Token' }) => {
   const formatNumber = (num) => {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    // Handle undefined, null, or invalid values
+    if (num === undefined || num === null || isNaN(num)) {
+      return '0';
+    }
+    // Convert to number if it's a string
+    const numValue = typeof num === 'string' ? parseFloat(num) : num;
+    // Format with commas
+    return numValue.toLocaleString();
   };
   
   // Ensure we have a valid progress value (prevent NaN or negative values)

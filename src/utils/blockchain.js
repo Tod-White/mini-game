@@ -1,26 +1,35 @@
-import { ethers } from 'ethers';
+/* global BigInt */
+import { 
+  BrowserProvider, 
+  JsonRpcProvider, 
+  Contract,
+  formatUnits, 
+  parseUnits 
+} from 'ethers';
+import TokenFactoryABI from './contracts/TokenFactory.json';
 
 // Contract ABI - replace with the actual ABI from your compiled contract
-const KarmaTokenABI = [
+const MineableTokenABI = [
   // Read-only functions
   "function balanceOf(address owner) view returns (uint256)",
   "function totalSupply() view returns (uint256)",
   "function name() view returns (string)",
   "function symbol() view returns (string)",
   "function decimals() view returns (uint8)",
+  "function totalMined() view returns (uint256)",
+  "function getRemainingSupply() view returns (uint256)",
+  "function getMinerStats(address miner) view returns (uint256)",
+  "function maxSupply() view returns (uint256)",
+  "function canPray(address user) view returns (bool)",
+  "function getPrayerCooldown(address user) view returns (uint256)",
   
-  // Mining functions
-  "function mine() external",
-  "function getMinerStats(address miner) external view returns (uint256)",
-  "function getRemainingSupply() external view returns (uint256)",
-  "function totalMined() external view returns (uint256)",
-  "function TOKENS_PER_MINE() external view returns (uint256)",
-  "function MAX_SUPPLY() external view returns (uint256)",
+  // Write functions
+  "function pray() returns (bool)",
   
   // Events
   "event Transfer(address indexed from, address indexed to, uint256 value)",
-  "event Mining(address indexed miner, uint256 amount, uint256 timestamp)",
-  "event MiningExhausted(uint256 totalMined, uint256 timestamp)"
+  "event Prayer(address indexed user, uint256 amount, uint256 timestamp)",
+  "event PrayerExhausted(uint256 totalMined, uint256 timestamp)"
 ];
 
 // Constants
@@ -48,6 +57,9 @@ export const SOMNIA_NETWORK_PARAMS = {
   rpcUrls: [SOMNIA_RPC_URL, 'https://rpc.ankr.com/somnia_testnet'],
   blockExplorerUrls: [EXPLORER_URL]
 };
+
+// Add TokenFactory contract address
+export const TOKEN_FACTORY_ADDRESS = '0xA1DDE5c3C1B35bF8317dbAB03beDCd7a2DE699FD';
 
 // Provider and contract setup
 let provider;
@@ -81,37 +93,50 @@ export const initBlockchain = async () => {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     
     // Set up provider and signer
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
+    provider = new BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
     
     // Get current network
     const network = await provider.getNetwork();
-    const isCorrectNetwork = network.chainId === SOMNIA_CHAIN_ID;
+    const isCorrectNetwork = network.chainId === BigInt(SOMNIA_CHAIN_ID);
     
-    // Notify listeners about the current network status
-    networkSwitchListeners.forEach(callback => {
-      callback(isCorrectNetwork);
-    });
-    
-    // Check if we're on Somnia
+    // If not on correct network, try to switch
     if (!isCorrectNetwork) {
-      console.log("Not on Somnia network, need to switch...");
-      return { 
-        account: accounts[0], 
-        isCorrectNetwork: false,
-        network: network
-      };
+      try {
+        await switchToSomniaNetwork();
+        // Re-check network after switch
+        const updatedNetwork = await provider.getNetwork();
+        const nowCorrect = updatedNetwork.chainId === BigInt(SOMNIA_CHAIN_ID);
+        
+        // Notify listeners about the current network status
+        networkSwitchListeners.forEach(callback => {
+          callback(nowCorrect);
+        });
+        
+        return { 
+          account: accounts[0], 
+          isCorrectNetwork: nowCorrect,
+          network: updatedNetwork
+        };
+      } catch (switchError) {
+        console.error("Failed to switch network:", switchError);
+        return { 
+          account: accounts[0], 
+          isCorrectNetwork: false,
+          network: network
+        };
+      }
     }
     
-    // Initialize contract connection
-    karmaTokenContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, signer);
-    
-    // Set up event listeners
-    setupEventListeners();
+    // Initialize contract connection only if on correct network
+    if (isCorrectNetwork) {
+      karmaTokenContract = new Contract(CONTRACT_ADDRESS, MineableTokenABI, signer);
+      setupEventListeners();
+    }
     
     return { 
       account: accounts[0], 
-      isCorrectNetwork: true,
+      isCorrectNetwork: isCorrectNetwork,
       network: network
     };
   } catch (error) {
@@ -124,13 +149,13 @@ export const initBlockchain = async () => {
 const setupEventListeners = () => {
   if (!karmaTokenContract) return;
   
-  // Mining event
-  karmaTokenContract.on("Mining", (miner, amount, timestamp) => {
+  // Prayer event
+  karmaTokenContract.on("Prayer", (user, amount, timestamp) => {
     const event = {
-      miner,
-      amount: ethers.utils.formatUnits(amount, 18),
-      timestamp: timestamp.toNumber(),
-      date: new Date(timestamp.toNumber() * 1000)
+      miner: user,
+      amount: formatUnits(amount, 18),
+      timestamp: Number(timestamp),
+      date: new Date(Number(timestamp) * 1000)
     };
     
     console.log("Prayer event:", event);
@@ -144,7 +169,7 @@ const setupEventListeners = () => {
     const event = {
       from,
       to,
-      value: ethers.utils.formatUnits(value, 18)
+      value: formatUnits(value, 18)
     };
     
     console.log("Transfer event:", event);
@@ -153,19 +178,21 @@ const setupEventListeners = () => {
     eventListeners.transfer.forEach(callback => callback(event));
   });
   
-  // MiningExhausted event
-  karmaTokenContract.on("MiningExhausted", (totalMined, timestamp) => {
-    const event = {
-      totalMined: ethers.utils.formatUnits(totalMined, 18),
-      timestamp: timestamp.toNumber(),
-      date: new Date(timestamp.toNumber() * 1000)
-    };
-    
-    console.log("Prayer exhausted event:", event);
-    
-    // Notify all listeners
-    eventListeners.exhausted.forEach(callback => callback(event));
-  });
+  // PrayerExhausted event
+  if (eventListeners.exhausted.length > 0) {
+    karmaTokenContract.on("PrayerExhausted", (totalMined, timestamp) => {
+      const event = {
+        totalMined: formatUnits(totalMined, 18),
+        timestamp: Number(timestamp),
+        date: new Date(Number(timestamp) * 1000)
+      };
+      
+      console.log("Prayer exhausted event:", event);
+      
+      // Notify all listeners
+      eventListeners.exhausted.forEach(callback => callback(event));
+    });
+  }
 };
 
 // Subscribe to event
@@ -202,9 +229,15 @@ export const addNetworkSwitchListener = (listener) => {
     // Initial check
     setTimeout(async () => {
       try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const provider = new BrowserProvider(window.ethereum);
         const network = await provider.getNetwork();
-        const isCorrectNetwork = network.chainId === SOMNIA_CHAIN_ID;
+        const isCorrectNetwork = network.chainId === BigInt(SOMNIA_CHAIN_ID);
+        
+        // Initialize contract if on correct network
+        if (isCorrectNetwork) {
+          const signer = await provider.getSigner();
+          karmaTokenContract = new Contract(CONTRACT_ADDRESS, MineableTokenABI, signer);
+        }
         
         networkSwitchListeners.forEach(callback => {
           callback(isCorrectNetwork);
@@ -215,10 +248,17 @@ export const addNetworkSwitchListener = (listener) => {
     }, 100);
     
     // Listen for chain changes
-    window.ethereum.on('chainChanged', (chainIdHex) => {
+    window.ethereum.on('chainChanged', async (chainIdHex) => {
       try {
         const chainId = parseInt(chainIdHex, 16);
         const isCorrectNetwork = chainId === SOMNIA_CHAIN_ID;
+        
+        // Re-initialize contract if on correct network
+        if (isCorrectNetwork) {
+          provider = new BrowserProvider(window.ethereum);
+          signer = await provider.getSigner();
+          karmaTokenContract = new Contract(CONTRACT_ADDRESS, MineableTokenABI, signer);
+        }
         
         console.log(`Chain changed to: ${chainId}, correct network: ${isCorrectNetwork}`);
         
@@ -228,15 +268,6 @@ export const addNetworkSwitchListener = (listener) => {
       } catch (error) {
         console.error("Error handling chain change:", error);
       }
-    });
-    
-    // Also listen for errors that might indicate wrong network
-    window.ethereum.on('error', (error) => {
-      console.error('Ethereum provider error:', error);
-      // Notify listeners about network error
-      networkSwitchListeners.forEach(callback => {
-        callback(false);
-      });
     });
   }
 };
@@ -269,12 +300,13 @@ export const switchToSomniaNetwork = async () => {
       params: [{ chainId: SOMNIA_NETWORK_PARAMS.chainId }]
     });
     
-    // Explicitly notify listeners about the network change
-    setTimeout(() => {
-      networkSwitchListeners.forEach(callback => {
-        callback(true); // We just switched to Somnia, so this should be true
-      });
-    }, 500);
+    // Wait a bit for the switch to complete
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Initialize provider and contract after switch
+    provider = new BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    karmaTokenContract = new Contract(CONTRACT_ADDRESS, MineableTokenABI, signer);
     
     return true;
   } catch (error) {
@@ -283,12 +315,13 @@ export const switchToSomniaNetwork = async () => {
       try {
         await addSomniaNetwork();
         
-        // Explicitly notify listeners about the network change
-        setTimeout(() => {
-          networkSwitchListeners.forEach(callback => {
-            callback(true); // We just added Somnia, so this should be true
-          });
-        }, 500);
+        // Wait a bit for the network to be added
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Initialize provider and contract after adding network
+        provider = new BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        karmaTokenContract = new Contract(CONTRACT_ADDRESS, MineableTokenABI, signer);
         
         return true;
       } catch (addError) {
@@ -301,62 +334,49 @@ export const switchToSomniaNetwork = async () => {
 };
 
 // Get balance
-export const getBalance = async (address) => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+export const getBalance = async (address, tokenAddress = CONTRACT_ADDRESS) => {
+  try {
+    const provider = new BrowserProvider(window.ethereum);
+    const tokenContract = new Contract(tokenAddress, MineableTokenABI, provider);
   
-  const balance = await karmaTokenContract.balanceOf(address);
-  return ethers.utils.formatUnits(balance, 18);
+    const balance = await tokenContract.balanceOf(address);
+    return formatUnits(balance, 18);
+  } catch (error) {
+    console.error("Error getting balance:", error);
+    return "0";
+  }
 };
 
 // Get miner stats
-export const getMinerStats = async (address) => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+export const getMinerStats = async (address, tokenAddress = CONTRACT_ADDRESS) => {
+  try {
+    const provider = new BrowserProvider(window.ethereum);
+    const tokenContract = new Contract(tokenAddress, MineableTokenABI, provider);
   
-  const stats = await karmaTokenContract.getMinerStats(address);
-  return ethers.utils.formatUnits(stats, 18);
+    const stats = await tokenContract.getMinerStats(address);
+    return formatUnits(stats, 18);
+  } catch (error) {
+    console.error("Error getting miner stats:", error);
+    return "0";
+  }
 };
 
 // Get global statistics
-export const getGlobalStats = async () => {
+export const getGlobalStats = async (tokenAddress = CONTRACT_ADDRESS) => {
   // Initialize a read-only provider for non-authenticated users
-  const readOnlyProvider = new ethers.providers.JsonRpcProvider(SOMNIA_RPC_URL);
-  
-  if (!karmaTokenContract) {
-    console.log("Using read-only contract for global stats");
-    const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, readOnlyProvider);
-    
-    try {
-      // Get statistics from the contract
-      const totalMined = await readOnlyContract.totalMined();
-      const remainingSupply = await readOnlyContract.getRemainingSupply();
-      const totalSupply = await readOnlyContract.MAX_SUPPLY();
-      
-      return {
-        totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
-        remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
-        totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
-      };
-    } catch (error) {
-      console.error("Error fetching global stats:", error);
-      // Return default values if there's an error
-      return {
-        totalMined: 0,
-        remainingSupply: 77770000,
-        totalSupply: 77770000
-      };
-    }
-  }
+  const readOnlyProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+  const tokenContract = new Contract(tokenAddress, MineableTokenABI, readOnlyProvider);
   
   try {
     // Get statistics from the contract
-    const totalMined = await karmaTokenContract.totalMined();
-    const remainingSupply = await karmaTokenContract.getRemainingSupply();
-    const totalSupply = await karmaTokenContract.MAX_SUPPLY();
+    const totalMined = await tokenContract.totalMined();
+    const remainingSupply = await tokenContract.getRemainingSupply();
+    const totalSupply = await tokenContract.maxSupply();
     
     return {
-      totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
-      remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
-      totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
+      totalMined: parseFloat(formatUnits(totalMined, 18)),
+      remainingSupply: parseFloat(formatUnits(remainingSupply, 18)),
+      totalSupply: parseFloat(formatUnits(totalSupply, 18))
     };
   } catch (error) {
     console.error("Error fetching global stats:", error);
@@ -434,30 +454,292 @@ const trackTransaction = async (txHash) => {
   }
 };
 
-// Pray for karma tokens
-export const prayForKarma = async () => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
-  
+// Pray for tokens
+export const pray = async (tokenAddress = CONTRACT_ADDRESS) => {
   try {
-    const tx = await karmaTokenContract.mine();
+    const provider = new BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const tokenContract = new Contract(tokenAddress, MineableTokenABI, signer);
     
-    // Return just the transaction hash, not an object
-    return tx.hash;
-  } catch (error) {
-    console.error("Prayer error:", error);
-    
-    // Provide more user-friendly error messages
-    if (error.code === "ACTION_REJECTED") {
-      throw new Error("Prayer requires your signature to confirm the transaction. Please confirm in your wallet to continue.");
-    } else if (error.message.includes("insufficient funds")) {
-      throw new Error("Your account has insufficient funds to pay for transaction fees. Please ensure you have enough STT.");
-    } else {
-      throw error; // Other errors remain unchanged
+    // Check if there are tokens available to pray for
+    const remainingSupply = await tokenContract.getRemainingSupply();
+    if (remainingSupply.toString() === "0") {
+      throw new Error("No tokens left to pray for");
     }
-  };
+
+    // Check if user can pray (cooldown period)
+    const canPrayNow = await tokenContract.canPray(await signer.getAddress());
+    if (!canPrayNow) {
+      throw new Error("Please wait before praying again");
+    }
+
+    // Perform the prayer transaction
+    const tx = await tokenContract.pray();
+    const receipt = await tx.wait();
+
+    return {
+      success: true,
+      hash: tx.hash,
+      receipt
+    };
+  } catch (error) {
+    console.error("Error praying:", error);
+    throw error;
+  }
 };
+
+// Check if user can pray
+export const canPray = async (address, tokenAddress = CONTRACT_ADDRESS) => {
+  try {
+    const provider = new BrowserProvider(window.ethereum);
+    const tokenContract = new Contract(tokenAddress, MineableTokenABI, provider);
+    return await tokenContract.canPray(address);
+  } catch (error) {
+    console.error("Error checking if can pray:", error);
+    return false;
+  }
+};
+
+// Get prayer cooldown
+export const getPrayerCooldown = async (address, tokenAddress = CONTRACT_ADDRESS) => {
+  try {
+    const provider = new BrowserProvider(window.ethereum);
+    const tokenContract = new Contract(tokenAddress, MineableTokenABI, provider);
+    const cooldown = await tokenContract.getPrayerCooldown(address);
+    return Number(cooldown);
+  } catch (error) {
+    console.error("Error getting prayer cooldown:", error);
+    return 0;
+  }
+};
+
+// Legacy function for backward compatibility
+export const prayForKarma = () => pray(CONTRACT_ADDRESS);
 
 // Get top holders
 export const getTopHolders = async () => {
   return []; // Return empty array as we're not using this anymore
+};
+
+// Deploy a new token
+export const deployToken = async (name, symbol, totalSupply) => {
+  try {
+    if (!window.ethereum) {
+      throw new Error("MetaMask is not installed");
+    }
+
+    const provider = new BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    const tokenFactory = new Contract(
+      TOKEN_FACTORY_ADDRESS,
+      TokenFactoryABI.abi,
+      signer
+    );
+
+    // Convert totalSupply to wei (18 decimals)
+    const totalSupplyWei = parseUnits(totalSupply.toString(), 18);
+    
+    // Deploy the token with just the 3 required parameters
+    const tx = await tokenFactory.deployToken(
+      name,
+      symbol,
+      totalSupplyWei
+    );
+
+    // Wait for deployment
+    const receipt = await tx.wait();
+    
+    // Get the deployed token address from the event
+    const event = receipt.logs[0]; // The TokenDeployed event should be the first and only event
+    const parsedLog = tokenFactory.interface.parseLog({
+      topics: event.topics,
+      data: event.data
+    });
+    const tokenAddress = parsedLog.args[0]; // The token address is the first argument
+
+    if (!tokenAddress) {
+      throw new Error('Could not get deployed token address from transaction');
+    }
+
+    return tokenAddress;
+  } catch (error) {
+    console.error('Error deploying token:', error);
+    throw error;
+  }
+};
+
+// Get list of deployed tokens
+export const getDeployedTokens = async () => {
+  try {
+    if (!window.ethereum) {
+      throw new Error("MetaMask is not installed");
+    }
+
+    const provider = new BrowserProvider(window.ethereum);
+    const tokenFactory = new Contract(
+      TOKEN_FACTORY_ADDRESS,
+      TokenFactoryABI.abi,
+      provider
+    );
+
+    // Get all token addresses
+    const tokenAddresses = await tokenFactory.getDeployedTokens();
+    
+    // Get details for each token
+    const tokens = await Promise.all(tokenAddresses.map(async (address) => {
+      const token = new Contract(address, MineableTokenABI, provider);
+      try {
+        const [name, symbol, totalSupply, remainingSupply] = await Promise.all([
+          token.name(),
+          token.symbol(),
+          token.totalSupply(),
+          token.getRemainingSupply()
+        ]);
+
+        return {
+          address,
+          name,
+          symbol,
+          totalSupply: formatUnits(totalSupply, 18),
+          remainingSupply: formatUnits(remainingSupply, 18),
+          deployedDate: new Date().toLocaleDateString()
+        };
+      } catch (error) {
+        console.error(`Error fetching details for token ${address}:`, error);
+        return null;
+      }
+    }));
+
+    // Filter out any failed token fetches
+    return tokens.filter(token => token !== null);
+  } catch (error) {
+    console.error('Error getting deployed tokens:', error);
+    throw new Error('Failed to get deployed tokens');
+  }
+};
+
+// Get token details
+export const getTokenDetails = async (tokenAddress) => {
+  try {
+    if (!tokenAddress) {
+      throw new Error('Token address is required');
+    }
+
+    const provider = new BrowserProvider(window.ethereum);
+    const contract = new Contract(tokenAddress, MineableTokenABI, provider);
+
+    const [name, symbol, totalSupply, remainingSupply] = await Promise.all([
+      contract.name(),
+      contract.symbol(),
+      contract.totalSupply(),
+      contract.getRemainingSupply()
+    ]);
+
+    return {
+      address: tokenAddress,
+      name,
+      symbol,
+      totalSupply: formatUnits(totalSupply, 18),
+      remainingSupply: formatUnits(remainingSupply, 18)
+    };
+  } catch (error) {
+    console.error('Error in getTokenDetails:', error);
+    throw new Error('Failed to get token details');
+  }
+};
+
+// Get user's token stats
+export const getUserTokenStats = async (userAddress, tokenAddress) => {
+  if (!tokenAddress || tokenAddress === CONTRACT_ADDRESS) {
+    throw new Error('Invalid token address');
+  }
+
+  try {
+    const provider = new BrowserProvider(window.ethereum);
+    const tokenContract = new Contract(tokenAddress, MineableTokenABI, provider);
+
+    // Get user's token data
+    const [balance, mined, canPrayNow, cooldown] = await Promise.all([
+      tokenContract.balanceOf(userAddress),
+      tokenContract.getMinerStats(userAddress),
+      tokenContract.canPray(userAddress),
+      tokenContract.getPrayerCooldown(userAddress)
+    ]);
+
+    return {
+      balance: formatUnits(balance, 18),
+      mined: formatUnits(mined, 18),
+      canPray: canPrayNow,
+      cooldownEnds: Number(cooldown)
+    };
+  } catch (error) {
+    console.error('Error getting user token stats:', error);
+    throw new Error('Failed to get user token stats');
+  }
+};
+
+// Subscribe to token events
+export const subscribeToTokenEvents = (tokenAddress, callbacks) => {
+  if (!tokenAddress || tokenAddress === CONTRACT_ADDRESS) {
+    throw new Error('Invalid token address');
+  }
+
+  try {
+    const provider = new BrowserProvider(window.ethereum);
+    const tokenContract = new Contract(tokenAddress, MineableTokenABI, provider);
+
+    // Subscribe to Mining events
+    if (callbacks.onPrayer) {
+      tokenContract.on("Prayer", (user, amount, timestamp) => {
+        callbacks.onPrayer({
+          miner: user,
+          amount: formatUnits(amount, 18),
+          timestamp: Number(timestamp),
+          date: new Date(Number(timestamp) * 1000)
+        });
+      });
+    }
+
+    // Subscribe to MiningExhausted events
+    if (callbacks.onExhausted) {
+      tokenContract.on("PrayerExhausted", (totalMined, timestamp) => {
+        callbacks.onExhausted({
+          totalMined: formatUnits(totalMined, 18),
+          timestamp: Number(timestamp),
+          date: new Date(Number(timestamp) * 1000)
+        });
+      });
+    }
+
+    // Return unsubscribe function
+    return () => {
+      tokenContract.removeAllListeners();
+    };
+  } catch (error) {
+    console.error('Error subscribing to token events:', error);
+    throw new Error('Failed to subscribe to token events');
+  }
+};
+
+// Cache for token details
+const tokenDetailsCache = new Map();
+const TOKEN_CACHE_DURATION = 30000; // 30 seconds
+
+// Get cached token details or fetch new ones
+export const getCachedTokenDetails = async (tokenAddress) => {
+  const now = Date.now();
+  const cached = tokenDetailsCache.get(tokenAddress);
+
+  if (cached && (now - cached.timestamp) < TOKEN_CACHE_DURATION) {
+    return cached.data;
+  }
+
+  const details = await getTokenDetails(tokenAddress);
+  tokenDetailsCache.set(tokenAddress, {
+    data: details,
+    timestamp: now
+  });
+
+  return details;
 }; 

@@ -1,26 +1,27 @@
-require("@nomicfoundation/hardhat-verify");
+require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.22",
+  solidity: "0.8.20",
   networks: {
-    "somnia-testnet": {
-      url: process.env.RPC_URL || "https://dream-rpc.somnia.network",
-      chainId: 50312,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+    somnia: {
+      url: "https://dream-rpc.somnia.network",
+      accounts: [process.env.PRIVATE_KEY],
+      chainId: 50312
     }
   },
   etherscan: {
     apiKey: {
-      "somnia-testnet": process.env.EXPLORER_API_KEY || "empty"
+      somnia: process.env.EXPLORER_API_KEY || ''
     },
     customChains: [
       {
-        network: "somnia-testnet",
+        network: "somnia",
         chainId: 50312,
         urls: {
-          apiURL: "https://shannon-explorer.somnia.network/api/v1/contract/verify",
-          browserURL: "https://shannon-explorer.somnia.network/"
+          apiURL: "https://somnia-testnet.socialscan.io/api",
+          browserURL: "https://somnia-testnet.socialscan.io"
         }
       }
     ]

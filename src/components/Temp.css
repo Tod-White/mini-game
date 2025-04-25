@@ -1,0 +1,175 @@
+.test-header {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+.test-mode-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: #4a5568;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.test-mode-button.active {
+  background-color: #48bb78;
+}
+
+.game-container {
+  position: relative;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.controls-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.error-message {
+  color: #e53e3e;
+  text-align: center;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.temp-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  color: #fff;
+}
+
+.temp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.temp-header h1 {
+  font-size: 2rem;
+  margin: 0;
+}
+
+.temp-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.temp-stat-card {
+  background-color: #2d3748;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  text-align: center;
+}
+
+.temp-stat-card h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #a0aec0;
+}
+
+.temp-stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.temp-progress {
+  margin-bottom: 2rem;
+}
+
+.temp-progress-bar {
+  width: 100%;
+  height: 1rem;
+  background-color: #2d3748;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.temp-progress-fill {
+  height: 100%;
+  background-color: #48bb78;
+  transition: width 0.3s ease;
+}
+
+.temp-progress-text {
+  text-align: center;
+  margin: 0;
+  color: #a0aec0;
+}
+
+.temp-actions {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.temp-pray-button {
+  padding: 1rem 2rem;
+  font-size: 1.25rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: #48bb78;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.temp-pray-button:disabled {
+  background-color: #4a5568;
+  cursor: not-allowed;
+}
+
+.temp-pray-button.praying {
+  background-color: #4299e1;
+}
+
+.temp-pray-button.prayed-out {
+  background-color: #e53e3e;
+}
+
+.temp-error {
+  color: #e53e3e;
+  text-align: center;
+  margin: 0;
+}
+
+.token-info {
+  display: none;
+}
+
+.explorer-link {
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  display: block;
+  width: fit-content;
+  margin: 1rem auto;
+}
+
+.explorer-link:hover {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  transform: translateY(-2px);
+} 

@@ -1,3 +1,4 @@
+/* global BigInt */
 import React, { useState, useEffect } from 'react';
 import './WalletConnector.css';
 import { 
@@ -7,7 +8,7 @@ import {
   addNetworkSwitchListener,
   SOMNIA_CHAIN_ID
 } from '../utils/blockchain';
-import { ethers } from 'ethers';
+import { BrowserProvider } from 'ethers';
 
 const WalletConnector = ({ isConnected, account, onConnect }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,9 +32,9 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
       }
       
       // Check network first
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new BrowserProvider(window.ethereum);
       const network = await provider.getNetwork();
-      const correctNetwork = network.chainId === SOMNIA_CHAIN_ID;
+      const correctNetwork = network.chainId === BigInt(SOMNIA_CHAIN_ID);
       
       // Update network indicator immediately
       setIsCorrectNetwork(correctNetwork);
@@ -91,9 +92,9 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
       }
       
       try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const provider = new BrowserProvider(window.ethereum);
         const network = await provider.getNetwork();
-        const correctNetwork = network.chainId === SOMNIA_CHAIN_ID;
+        const correctNetwork = network.chainId === BigInt(SOMNIA_CHAIN_ID);
         
         console.log("Initial network check, chain ID:", network.chainId, "correct:", correctNetwork);
         
@@ -155,9 +156,9 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
         // Check if network was successfully changed
         setTimeout(async () => {
           if (window.ethereum) {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const provider = new BrowserProvider(window.ethereum);
             const network = await provider.getNetwork();
-            const correctNetwork = network.chainId === SOMNIA_CHAIN_ID;
+            const correctNetwork = network.chainId === BigInt(SOMNIA_CHAIN_ID);
             
             setIsCorrectNetwork(correctNetwork);
             setNetworkIndicator(correctNetwork ? 'Somnia' : 'Wrong Network');

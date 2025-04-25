@@ -1,41 +1,35 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { pray, canPray, getPrayerCooldown } from '../utils/blockchain';
 import './PrayerHands.css';
 
-const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNetwork = true }) => {
-  const [showPrayButton, setShowPrayButton] = useState(false);
-  const [isPraying, setIsPraying] = useState(false);
-  const [karmaPoints, setKarmaPoints] = useState([]);
-  const [showingAnimation, setShowingAnimation] = useState(false);
-  const [showNetworkMessage, setShowNetworkMessage] = useState(!isCorrectNetwork);
-  const [isWrongNetworkVisible, setIsWrongNetworkVisible] = useState(false);
-  
-  const hasPrayedRef = useRef(false);
-  const isProcessingRef = useRef(false);
+// Default token configuration
+const DEFAULT_TOKEN = {
+  address: null,  // Will default to CONTRACT_ADDRESS in blockchain.js
+  name: 'Karma',
+  symbol: 'KARMA',
+  tokensPerPrayer: 7
+};
 
-  useEffect(() => {
-    hasPrayedRef.current = false;
-    isProcessingRef.current = false;
-    setIsPraying(false);
-    setShowingAnimation(false);
-    
-    if (status === 'ready') {
-      setShowPrayButton(true);
-    } else if (status === 'praying') {
-      setIsPraying(true);
-      setShowPrayButton(false);
-    } else if (status === 'prayed') {
-      hasPrayedRef.current = true;
-      setShowPrayButton(false);
-    } else {
-      setShowPrayButton(false);
-    }
-  }, [status]);
-
-  useEffect(() => {
-    setShowNetworkMessage(!isCorrectNetwork);
-  }, [isCorrectNetwork]);
+const PrayerHands = ({ 
+  token = null, 
+  onPrayerComplete,
+  status = 'ready', // ready, praying, prayed-out
+  isConnected = false,
+  onConnectWallet,
+  isCorrectNetwork = true
+}) => {
+  // Only merge with defaults if token is provided and has an address
+  const currentToken = token && token.address ? { ...DEFAULT_TOKEN, ...token } : DEFAULT_TOKEN;
   
-  const createKarmaPoints = () => {
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [points, setPoints] = useState([]);
+  const [canPrayNow, setCanPrayNow] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [error, setError] = useState('');
+  const [showPrayButton, setShowPrayButton] = useState(true);
+
+  // Function to create floating points
+  const createPoints = useCallback(() => {
     const pointsCount = 10;
     const points = [];
     
@@ -71,45 +65,46 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
         },
         delay,
         size,
-        duration: 2000 + Math.random() * 1000
+        duration: 2000 + Math.random() * 1000,
+        text: `${currentToken.symbol}+1`
       });
     });
     
-    if (pointsCount > sectors.length) {
-      const additionalPoints = pointsCount - sectors.length;
-      
-      for (let i = 0; i < additionalPoints; i++) {
-        const angle = Math.random() * 2 * Math.PI;
-        const radius = 90 + Math.random() * 70;
-        
-        const centerX = 35;
-        
-        const xOffset = -8 - Math.random() * 10;
-        
-        const x = centerX + (radius * Math.cos(angle)) / 2.4 + xOffset;
-        const y = centerY + (radius * Math.sin(angle)) / 2.4;
-        
-        const delay = 800 + Math.random() * 500;
-        
-        const size = Math.random() < 0.5 ? 'small' : 'medium';
-        
-        points.push({
-          id: sectors.length + i,
-          position: { 
-            top: `${y}%`, 
-            left: `${x}%` 
-          },
-          delay,
-          size,
-          duration: 2000 + Math.random() * 1000
-        });
-      }
-    }
-    
-    return points;
-  };
+    setPoints(points);
+    setTimeout(() => {
+      setPoints([]);
+    }, 3000);
+  }, [currentToken.symbol]);
 
-  const handlePrayButtonClick = (e) => {
+  // Check if user can pray
+  const checkCanPray = useCallback(async () => {
+    try {
+      if (window.ethereum && isConnected && isCorrectNetwork) {
+        const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+        if (accounts[0]) {
+          const canPrayNow = await canPray(accounts[0], currentToken.address);
+          setCanPrayNow(canPrayNow);
+          setShowPrayButton(canPrayNow && status === 'ready');
+          if (!canPrayNow) {
+            const remainingCooldown = await getPrayerCooldown(accounts[0], currentToken.address);
+            setCooldown(remainingCooldown);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error checking prayer status:', err);
+    }
+  }, [currentToken.address, isConnected, isCorrectNetwork, status]);
+
+  // Effect to check prayer status periodically
+  useEffect(() => {
+    checkCanPray();
+    const interval = setInterval(checkCanPray, 1000);
+    return () => clearInterval(interval);
+  }, [checkCanPray]);
+
+  // Handle prayer
+  const handlePray = async (e) => {
     if (e) {
       e.stopPropagation();
     }
@@ -121,84 +116,78 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
       return;
     }
     
-    if (isProcessingRef.current) {
-      console.log("Already processing prayer request, ignoring duplicate clicks");
-      return;
-    }
+    if (!canPrayNow || status !== 'ready') return;
     
-    if (status === 'ready' && !isPraying && !hasPrayedRef.current && !showingAnimation) {
-      isProcessingRef.current = true;
+    try {
+      setError('');
+      setIsAnimating(true);
+      setShowPrayButton(false);
+      createPoints();
       
-      setShowingAnimation(true);
-      setKarmaPoints(createKarmaPoints());
+      const result = await pray(currentToken.address);
       
-      setTimeout(() => {
-        hasPrayedRef.current = true;
-        setIsPraying(true);
-        
-        if (onPray && isProcessingRef.current) {
-          onPray();
+      if (result.success) {
+        if (onPrayerComplete) {
+          onPrayerComplete(result.hash);
         }
-      }, 3000);
-    }
-  };
-
-  const handleImageClick = (e) => {
-    if (e.currentTarget === e.target || e.target.tagName === 'IMG') {
-      if (showPrayButton && status === 'ready' && !isPraying && !hasPrayedRef.current && !showingAnimation && !isProcessingRef.current) {
-        handlePrayButtonClick();
       }
+    } catch (err) {
+      setError(err.message || 'Failed to pray. Please try again.');
+      console.error('Prayer error:', err);
+      setShowPrayButton(true);
+    } finally {
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 2000);
     }
   };
 
-  const handleWrongNetworkClick = (e) => {
-    e.stopPropagation();
-  };
-  
-  const hideWrongNetwork = () => {
-    const messageElement = document.querySelector('.wrong-network-message');
-    if (messageElement) {
-      messageElement.classList.add('hiding');
-      setTimeout(() => {
-        setIsWrongNetworkVisible(false);
-      }, 500);
-    }
+  // Format cooldown time
+  const formatCooldown = (seconds) => {
+    if (seconds <= 0) return '';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   const containerClassName = `prayer-container ${status} ${isConnected ? 'connected' : 'not-connected'}`;
 
-  useEffect(() => {
-    if (status === "Wrong network") {
-      setIsWrongNetworkVisible(true);
-    }
-  }, [status]);
-
   return (
-    <div className={containerClassName} onClick={hideWrongNetwork}>
+    <div className={containerClassName}>
+      {error && <div className="error-message">{error}</div>}
+      
       <div 
         className="prey-image-container" 
-        onClick={handleImageClick}
-        style={{ cursor: (status === 'ready' && !isPraying && showPrayButton && !hasPrayedRef.current && !showingAnimation && !isProcessingRef.current) ? 'pointer' : 'default' }}
+        onClick={handlePray}
+        style={{ cursor: (showPrayButton && isConnected) ? 'pointer' : 'default' }}
       >
         <img 
           src="/image/Prey.png" 
-          alt="Karma Prey" 
-          className={`prey-image ${status}`}
+          alt={`${currentToken.name} Prayer`}
+          className="prey-image"
         />
         
-        {showPrayButton && status === 'ready' && !isPraying && !hasPrayedRef.current && !showingAnimation && !isProcessingRef.current && (
+        {points.map(point => (
+          <div
+            key={point.id}
+            className={`karma-point karma-point-${point.size}`}
+            style={{
+              ...point.position,
+              animationDelay: `${point.delay}ms`,
+              animationDuration: `${point.duration}ms`
+            }}
+          >
+            {point.text}
+          </div>
+        ))}
+        
+        {showPrayButton && status === 'ready' && isConnected && isCorrectNetwork && (
           <button 
             className="pray-button-overlay"
-            onClick={handlePrayButtonClick}
+            onClick={handlePray}
           >
             Pray
           </button>
-        )}
-        
-        {status === 'prayed-out' && (
-          <div className="pray-out-message">
-            PRAY OUT
-          </div>
         )}
 
         {!isConnected && (
@@ -207,33 +196,22 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
           </div>
         )}
 
-        {isConnected && showNetworkMessage && (
-          <div className={`wrong-network-message ${isCorrectNetwork ? 'hiding' : ''}`} onClick={handleWrongNetworkClick}>
+        {isConnected && !isCorrectNetwork && (
+          <div className="wrong-network-message">
             Please change to Somnia to proceed
           </div>
         )}
 
-        {isWrongNetworkVisible && (
-          <div className="wrong-network-message" onClick={handleWrongNetworkClick}>
-            Wrong Network! Please switch to Somnia
+        {!canPrayNow && cooldown > 0 && (
+          <div className="pray-out-message">Next prayer in: {formatCooldown(cooldown)}</div>
+        )}
+
+        {status === 'prayed-out' && (
+          <div className="pray-out-message">
+            PRAY OUT
           </div>
         )}
       </div>
-      
-      {showingAnimation && karmaPoints.map(point => (
-        <div 
-          key={point.id}
-          className={`karma-point karma-point-${point.size}`}
-          style={{
-            top: point.position.top,
-            left: point.position.left,
-            animationDelay: `${point.delay}ms`,
-            animationDuration: `${point.duration}ms`
-          }}
-        >
-          Karma+1
-        </div>
-      ))}
     </div>
   );
 };

@@ -1,30 +1,31 @@
-# dependencies
-node_modules
-/.pnp
-.pnp.js
-
-# testing
-/coverage
-
-# production
-/build
-
-# misc
-.DS_Store
+# 忽略 .env 文件（包含敏感配置和密钥）
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
+# 常见的忽略项
+node_modules/
+.DS_Store
+.vscode/
+.idea/
+
+# 日志文件
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Hardhat files
-cache/
-artifacts/
+# 构建和产出目录
+/dist
+/build
+/out
+/coverage
 
-# IDE files
-.idea/
-.vscode/
+# 本地配置和缓存
+.cache/
+.npm/
+.eslintcache
+
+# 其他常见忽略项
+*.tmp
+*.swp
+*.bak
+Thumbs.db

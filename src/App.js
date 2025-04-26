@@ -12,7 +12,7 @@ import {
   getBalance, 
   getMinerStats, 
   getGlobalStats, 
-  prayForKarma,
+  prayForFaith,
   subscribeToTransaction,
   unsubscribeFromTransaction,
   subscribeToEvent,
@@ -173,7 +173,7 @@ function App() {
       if (stats.remainingSupply <= 0) {
         setMiningStatus('prayed-out');
         // Display a message that all tokens have been prayed for
-        setError("All Karma tokens have been prayed for! Praying is now closed.");
+        setError("All Faith tokens have been prayed for! Praying is now closed.");
       }
       
       console.log("Global stats loaded:", stats, "Progress:", progress.toFixed(2) + "%");
@@ -207,7 +207,7 @@ function App() {
     setMiningStatus('prayed-out');
     
     // Show a message that praying is exhausted
-    setError("All Karma tokens have been prayed for! Praying is now closed.");
+    setError("All Faith tokens have been prayed for! Praying is now closed.");
     
     // Update global stats
     loadGlobalStats();
@@ -254,8 +254,8 @@ function App() {
     setError(null);
     
     try {
-      // Attempt to pray for karma
-      const txHash = await prayForKarma();
+      // Attempt to pray for faith
+      const txHash = await prayForFaith();
       console.log("Prayer transaction submitted:", txHash);
       
       // Update the UI to indicate prayer is in progress
@@ -327,7 +327,7 @@ function App() {
   // TESTING ONLY: Simulate prayed out state
   const simulatePrayedOut = () => {
     setMiningStatus('prayed-out');
-    setError("TESTING: All Karma tokens have been prayed for! Praying is now closed.");
+    setError("TESTING: All Faith tokens have been prayed for! Praying is now closed.");
     
     // Update global stats to show all tokens prayed
     setGlobalStats(prev => ({
@@ -342,7 +342,7 @@ function App() {
     // Update prayer stats to show a realistic percentage
     setMinerStats(prev => ({
       ...prev,
-      mined: 150000, // 150K KARMA, which is about 1.9% of total supply
+      mined: 150000, // 150K FAITH, which is about 0.000019% of total supply
       balance: 150000
     }));
   };
@@ -480,7 +480,7 @@ function App() {
               progress={prayProgress} 
               remaining={globalStats.remainingSupply}
               total={globalStats.totalSupply}
-              title="Karma"
+              title="Faith"
             />
           </div>
           

@@ -4,7 +4,7 @@ const fs = require('fs');
 require('dotenv').config();
 
 // Load contract artifacts
-const contractJson = require('./artifacts/contracts/KarmaToken.sol/KarmaToken.json');
+const contractJson = require('../artifacts/contracts/FaithToken.sol/FaithToken.json');
 
 async function main() {
   // Check for private key
@@ -53,8 +53,8 @@ async function main() {
   }
   
   // Deploy contract
-  console.log("Deploying Karma Token contract...");
-  console.log("(Supply: 77,770,000 KARMA, 10K tokens per prayer action)");
+  console.log("Deploying Faith Token contract...");
+  console.log("(Supply: 777,777,777,000 FAITH, 1,000 tokens per prayer action)");
   
   const factory = new ethers.ContractFactory(
     contractJson.abi, 
@@ -70,7 +70,7 @@ async function main() {
     await contract.deployed();
     const contractAddress = contract.address;
     
-    console.log(`\nKarma Token deployed to: ${contractAddress}`);
+    console.log(`\nFaith Token deployed to: ${contractAddress}`);
     
     // Update .env file with the contract address
     const envFile = fs.readFileSync('.env', 'utf8');

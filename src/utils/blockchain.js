@@ -1,7 +1,7 @@
 const { ethers } = require('ethers');
 
-// Contract ABI - replace with the actual ABI from your compiled contract
-const KarmaTokenABI = [
+// Contract ABI - FaithToken
+const FaithTokenABI = [
   // Read-only functions
   "function balanceOf(address owner) view returns (uint256)",
   "function totalSupply() view returns (uint256)",
@@ -25,7 +25,7 @@ const KarmaTokenABI = [
 
 // Constants
 export const SOMNIA_CHAIN_ID = 50312;
-export const CONTRACT_ADDRESS = '0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e';
+export const CONTRACT_ADDRESS = '0xb257550Fbc4cbC53302eDc8F341a0e402B6e6AC8';
 export const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network';
 export const EXPLORER_URL = 'https://shannon-explorer.somnia.network';
 
@@ -52,7 +52,7 @@ export const SOMNIA_NETWORK_PARAMS = {
 // Provider and contract setup
 let provider;
 let signer;
-let karmaTokenContract;
+let faithTokenContract;
 let networkSwitchListeners = [];
 
 // Transaction listeners
@@ -105,7 +105,7 @@ export const initBlockchain = async () => {
     }
     
     // Initialize contract connection
-    karmaTokenContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, signer);
+    faithTokenContract = new ethers.Contract(CONTRACT_ADDRESS, FaithTokenABI, signer);
     
     // Set up event listeners
     setupEventListeners();
@@ -123,10 +123,10 @@ export const initBlockchain = async () => {
 
 // Set up event listeners
 const setupEventListeners = () => {
-  if (!karmaTokenContract) return;
+  if (!faithTokenContract) return;
   
   // Mining event
-  karmaTokenContract.on("Mining", (miner, amount, timestamp) => {
+  faithTokenContract.on("Mining", (miner, amount, timestamp) => {
     const event = {
       miner,
       amount: ethers.utils.formatUnits(amount, 18),
@@ -141,7 +141,7 @@ const setupEventListeners = () => {
   });
   
   // Transfer event
-  karmaTokenContract.on("Transfer", (from, to, value) => {
+  faithTokenContract.on("Transfer", (from, to, value) => {
     const event = {
       from,
       to,
@@ -155,7 +155,7 @@ const setupEventListeners = () => {
   });
   
   // MiningExhausted event
-  karmaTokenContract.on("MiningExhausted", (totalMined, timestamp) => {
+  faithTokenContract.on("MiningExhausted", (totalMined, timestamp) => {
     const event = {
       totalMined: ethers.utils.formatUnits(totalMined, 18),
       timestamp: timestamp.toNumber(),
@@ -179,7 +179,7 @@ export const subscribeToEvent = (eventName, callback) => {
   eventListeners[eventName].push(callback);
   
   // Initialize event listeners if not already done
-  if (karmaTokenContract && eventListeners[eventName].length === 1) {
+  if (faithTokenContract && eventListeners[eventName].length === 1) {
     setupEventListeners();
   }
 };
@@ -305,17 +305,17 @@ export const switchToSomniaNetwork = async () => {
 
 // Get balance
 export const getBalance = async (address) => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+  if (!faithTokenContract) throw new Error("Contract not initialized");
   
-  const balance = await karmaTokenContract.balanceOf(address);
+  const balance = await faithTokenContract.balanceOf(address);
   return ethers.utils.formatUnits(balance, 18);
 };
 
 // Get miner stats
 export const getMinerStats = async (address) => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+  if (!faithTokenContract) throw new Error("Contract not initialized");
   
-  const stats = await karmaTokenContract.getMinerStats(address);
+  const stats = await faithTokenContract.getMinerStats(address);
   return ethers.utils.formatUnits(stats, 18);
 };
 
@@ -324,9 +324,9 @@ export const getGlobalStats = async () => {
   // Initialize a read-only provider for non-authenticated users
   const readOnlyProvider = new ethers.providers.JsonRpcProvider(SOMNIA_RPC_URL);
   
-  if (!karmaTokenContract) {
+  if (!faithTokenContract) {
     console.log("Using read-only contract for global stats");
-    const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, readOnlyProvider);
+    const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, FaithTokenABI, readOnlyProvider);
     
     try {
       // Get statistics from the contract
@@ -346,17 +346,17 @@ export const getGlobalStats = async () => {
       // Return default values if there's an error
       return {
         totalMined: 0,
-        remainingSupply: 77770000,
-        totalSupply: 77770000
+        remainingSupply: 777777777000,
+        totalSupply: 777777777000
       };
     }
   }
   
   try {
     // Get statistics from the contract
-    const totalMined = await karmaTokenContract.totalMined();
-    const remainingSupply = await karmaTokenContract.getRemainingSupply();
-    const totalSupply = await karmaTokenContract.MAX_SUPPLY();
+    const totalMined = await faithTokenContract.totalMined();
+    const remainingSupply = await faithTokenContract.getRemainingSupply();
+    const totalSupply = await faithTokenContract.MAX_SUPPLY();
     console.log("[getGlobalStats] totalMined (connected):", totalMined.toString());
     console.log("[getGlobalStats] remainingSupply (connected):", remainingSupply.toString());
     console.log("[getGlobalStats] totalSupply (connected):", totalSupply.toString());
@@ -370,8 +370,8 @@ export const getGlobalStats = async () => {
     // Return default values if there's an error
     return {
       totalMined: 0,
-      remainingSupply: 77770000,
-      totalSupply: 77770000
+      remainingSupply: 777777777000,
+      totalSupply: 777777777000
     };
   }
 };
@@ -441,12 +441,12 @@ const trackTransaction = async (txHash) => {
   }
 };
 
-// Pray for karma tokens
-export const prayForKarma = async () => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+// Pray for faith tokens
+export const prayForFaith = async () => {
+  if (!faithTokenContract) throw new Error("Contract not initialized");
   
   try {
-    const tx = await karmaTokenContract.mine();
+    const tx = await faithTokenContract.mine();
     
     // Return just the transaction hash, not an object
     return tx.hash;

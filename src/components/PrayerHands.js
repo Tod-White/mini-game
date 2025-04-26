@@ -4,7 +4,7 @@ import './PrayerHands.css';
 const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNetwork = true }) => {
   const [showPrayButton, setShowPrayButton] = useState(false);
   const [isPraying, setIsPraying] = useState(false);
-  const [karmaPoints, setKarmaPoints] = useState([]);
+  const [faithPoints, setFaithPoints] = useState([]);
   const [showingAnimation, setShowingAnimation] = useState(false);
   const [showNetworkMessage, setShowNetworkMessage] = useState(!isCorrectNetwork);
   const [isWrongNetworkVisible, setIsWrongNetworkVisible] = useState(false);
@@ -35,7 +35,7 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
     setShowNetworkMessage(!isCorrectNetwork);
   }, [isCorrectNetwork]);
   
-  const createKarmaPoints = () => {
+  const createFaithPoints = () => {
     const pointsCount = 10;
     const points = [];
     
@@ -130,7 +130,7 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
       isProcessingRef.current = true;
       
       setShowingAnimation(true);
-      setKarmaPoints(createKarmaPoints());
+      setFaithPoints(createFaithPoints());
       
       setTimeout(() => {
         hasPrayedRef.current = true;
@@ -182,7 +182,7 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
       >
         <img 
           src="/image/Prey.png" 
-          alt="Karma Prey" 
+          alt="Faith Pray" 
           className={`prey-image ${status}`}
         />
         
@@ -220,10 +220,10 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
         )}
       </div>
       
-      {showingAnimation && karmaPoints.map(point => (
+      {showingAnimation && faithPoints.map(point => (
         <div 
           key={point.id}
-          className={`karma-point karma-point-${point.size}`}
+          className={`faith-point faith-point-${point.size}`}
           style={{
             top: point.position.top,
             left: point.position.left,
@@ -231,7 +231,7 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
             animationDuration: `${point.duration}ms`
           }}
         >
-          Karma+1
+          Faith+1
         </div>
       ))}
     </div>

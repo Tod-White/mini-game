@@ -1,38 +1,38 @@
-// Deploy script for KarmaToken contract
+// Deploy script for FaithToken contract
 const hre = require("hardhat");
 
 async function main() {
-  console.log("Deploying Karma Token contract...");
+  console.log("Deploying Faith Token contract...");
 
   // Get the contract factory
-  const KarmaToken = await hre.ethers.getContractFactory("KarmaToken");
+  const FaithToken = await hre.ethers.getContractFactory("FaithToken");
   
   // Deploy the contract
-  const karmaToken = await KarmaToken.deploy();
+  const faithToken = await FaithToken.deploy();
 
   // Wait for deployment to finish
-  await karmaToken.waitForDeployment();
+  await faithToken.waitForDeployment();
 
-  const karmaTokenAddress = await karmaToken.getAddress();
-  console.log(`Karma Token deployed to: ${karmaTokenAddress}`);
+  const faithTokenAddress = await faithToken.getAddress();
+  console.log(`Faith Token deployed to: ${faithTokenAddress}`);
   
   // Get contract info
-  const totalSupply = await karmaToken.MAX_SUPPLY();
-  const name = await karmaToken.name();
-  const symbol = await karmaToken.symbol();
-  const tokensPerMine = await karmaToken.TOKENS_PER_MINE();
+  const totalSupply = await faithToken.MAX_SUPPLY();
+  const name = await faithToken.name();
+  const symbol = await faithToken.symbol();
+  const tokensPerMine = await faithToken.TOKENS_PER_MINE();
   
   console.log(`Token Name: ${name}`);
   console.log(`Token Symbol: ${symbol}`);
-  console.log(`Total Supply: ${hre.ethers.formatEther(totalSupply)} KARMA`);
-  console.log(`Tokens Per Mine: ${hre.ethers.formatEther(tokensPerMine)} KARMA (10K per mining action)`);
+  console.log(`Total Supply: ${hre.ethers.formatEther(totalSupply)} FAITH`);
+  console.log(`Tokens Per Mine: ${hre.ethers.formatEther(tokensPerMine)} FAITH (1,000 per mining action)`);
   
   console.log("\nVerify contract with:");
-  console.log(`npx hardhat verify --network somnia-testnet ${karmaTokenAddress}`);
+  console.log(`npx hardhat verify --network somnia-testnet ${faithTokenAddress}`);
   
   // Encourage updating ENV file
   console.log("\nDon't forget to update your .env file with the contract address!");
-  console.log(`CONTRACT_ADDRESS=${karmaTokenAddress}`);
+  console.log(`CONTRACT_ADDRESS=${faithTokenAddress}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -1,7 +1,7 @@
 import React from 'react';
 import './ProgressBar.css';
 
-const ProgressBar = ({ progress, remaining, total, title = 'Karma' }) => {
+const ProgressBar = ({ progress, remaining, total, title = 'Faith' }) => {
   const formatNumber = (num) => {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };

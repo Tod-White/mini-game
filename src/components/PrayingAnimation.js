@@ -50,7 +50,7 @@ const PrayingAnimation = ({ onComplete }) => {
     <div className="praying-animation">
       <div className="celebration-message">
         <span>Congratulations!</span>
-        <p>You received 10,000 KARMA</p>
+        <p>You received 1,000 FAITH</p>
       </div>
       
       {particles.map(particle => (

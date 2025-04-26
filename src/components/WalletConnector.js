@@ -32,9 +32,10 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
       }
       
       // Check network first
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
       const network = await provider.getNetwork();
-      const correctNetwork = network.chainId === BigInt(SOMNIA_CHAIN_ID);
+      const correctNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
+      console.log("[WalletConnector] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", correctNetwork);
       
       // Update network indicator immediately
       setIsCorrectNetwork(correctNetwork);
@@ -92,9 +93,10 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
       }
       
       try {
-        const provider = new ethers.BrowserProvider(window.ethereum);
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
         const network = await provider.getNetwork();
-        const correctNetwork = network.chainId === BigInt(SOMNIA_CHAIN_ID);
+        const correctNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
+        console.log("[WalletConnector] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", correctNetwork);
         
         console.log("Initial network check, chain ID:", network.chainId, "correct:", correctNetwork);
         
@@ -114,8 +116,8 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
       const handleDirectChainChange = (chainIdHex) => {
         try {
           const chainId = parseInt(chainIdHex, 16);
-          console.log("Direct chain change in WalletConnector:", chainId);
-          const correctNetwork = chainId === SOMNIA_CHAIN_ID;
+          console.log("[WalletConnector] Direct chain change, chainId:", chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", Number(chainId) === Number(SOMNIA_CHAIN_ID));
+          const correctNetwork = Number(chainId) === Number(SOMNIA_CHAIN_ID);
           
           // Update UI immediately
           setIsCorrectNetwork(correctNetwork);
@@ -156,9 +158,10 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
         // Check if network was successfully changed
         setTimeout(async () => {
           if (window.ethereum) {
-            const provider = new ethers.BrowserProvider(window.ethereum);
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
             const network = await provider.getNetwork();
-            const correctNetwork = network.chainId === BigInt(SOMNIA_CHAIN_ID);
+            const correctNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
+            console.log("[WalletConnector] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", correctNetwork);
             
             setIsCorrectNetwork(correctNetwork);
             setNetworkIndicator(correctNetwork ? 'Somnia' : 'Wrong Network');

@@ -81,12 +81,13 @@ export const initBlockchain = async () => {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     
     // Set up provider and signer
-    provider = new ethers.BrowserProvider(window.ethereum);
+    provider = new ethers.providers.Web3Provider(window.ethereum);
     signer = await provider.getSigner();
     
     // Get current network
     const network = await provider.getNetwork();
-    const isCorrectNetwork = network.chainId === SOMNIA_CHAIN_ID;
+    const isCorrectNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
+    console.log("[blockchain.js] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", isCorrectNetwork);
     
     // Notify listeners about the current network status
     networkSwitchListeners.forEach(callback => {
@@ -204,7 +205,8 @@ export const addNetworkSwitchListener = (listener) => {
       try {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const network = await provider.getNetwork();
-        const isCorrectNetwork = network.chainId === SOMNIA_CHAIN_ID;
+        const isCorrectNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
+        console.log("[blockchain.js] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", isCorrectNetwork);
         
         networkSwitchListeners.forEach(callback => {
           callback(isCorrectNetwork);
@@ -218,7 +220,8 @@ export const addNetworkSwitchListener = (listener) => {
     window.ethereum.on('chainChanged', (chainIdHex) => {
       try {
         const chainId = parseInt(chainIdHex, 16);
-        const isCorrectNetwork = chainId === SOMNIA_CHAIN_ID;
+        const isCorrectNetwork = Number(chainId) === Number(SOMNIA_CHAIN_ID);
+        console.log("[blockchain.js] Chain changed to:", chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", isCorrectNetwork);
         
         console.log(`Chain changed to: ${chainId}, correct network: ${isCorrectNetwork}`);
         
@@ -319,7 +322,7 @@ export const getMinerStats = async (address) => {
 // Get global statistics
 export const getGlobalStats = async () => {
   // Initialize a read-only provider for non-authenticated users
-  const readOnlyProvider = new ethers.JsonRpcProvider(SOMNIA_RPC_URL);
+  const readOnlyProvider = new ethers.providers.JsonRpcProvider(SOMNIA_RPC_URL);
   
   if (!karmaTokenContract) {
     console.log("Using read-only contract for global stats");
@@ -330,14 +333,16 @@ export const getGlobalStats = async () => {
       const totalMined = await readOnlyContract.totalMined();
       const remainingSupply = await readOnlyContract.getRemainingSupply();
       const totalSupply = await readOnlyContract.MAX_SUPPLY();
-      
+      console.log("[getGlobalStats] totalMined:", totalMined.toString());
+      console.log("[getGlobalStats] remainingSupply:", remainingSupply.toString());
+      console.log("[getGlobalStats] totalSupply:", totalSupply.toString());
       return {
-        totalMined: parseFloat(ethers.formatUnits(totalMined, 18)),
-        remainingSupply: parseFloat(ethers.formatUnits(remainingSupply, 18)),
-        totalSupply: parseFloat(ethers.formatUnits(totalSupply, 18))
+        totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
+        remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
+        totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
       };
     } catch (error) {
-      console.error("Error fetching global stats:", error);
+      console.error("[getGlobalStats] Error fetching global stats (readOnlyContract):", error);
       // Return default values if there's an error
       return {
         totalMined: 0,
@@ -352,14 +357,16 @@ export const getGlobalStats = async () => {
     const totalMined = await karmaTokenContract.totalMined();
     const remainingSupply = await karmaTokenContract.getRemainingSupply();
     const totalSupply = await karmaTokenContract.MAX_SUPPLY();
-    
+    console.log("[getGlobalStats] totalMined (connected):", totalMined.toString());
+    console.log("[getGlobalStats] remainingSupply (connected):", remainingSupply.toString());
+    console.log("[getGlobalStats] totalSupply (connected):", totalSupply.toString());
     return {
-      totalMined: parseFloat(ethers.formatUnits(totalMined, 18)),
-      remainingSupply: parseFloat(ethers.formatUnits(remainingSupply, 18)),
-      totalSupply: parseFloat(ethers.formatUnits(totalSupply, 18))
+      totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
+      remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
+      totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
     };
   } catch (error) {
-    console.error("Error fetching global stats:", error);
+    console.error("[getGlobalStats] Error fetching global stats (connected):", error);
     // Return default values if there's an error
     return {
       totalMined: 0,

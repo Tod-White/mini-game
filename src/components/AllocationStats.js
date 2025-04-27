@@ -9,7 +9,7 @@ const AllocationStats = () => {
         <p>
           View all token holders on{' '}
           <a 
-            href="https://shannon-explorer.somnia.network/token/0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e?tab=holders" 
+            href="https://shannon-explorer.somnia.network/token/0x3E9c46064B5f8Ab4605506841076059F3e93fbb0?tab=holders" 
             target="_blank" 
             rel="noopener noreferrer"
             className="explorer-link"

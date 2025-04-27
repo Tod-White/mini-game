@@ -25,7 +25,7 @@ const FaithTokenABI = [
 
 // Constants
 export const SOMNIA_CHAIN_ID = 50312;
-export const CONTRACT_ADDRESS = '0xb257550Fbc4cbC53302eDc8F341a0e402B6e6AC8';
+export const CONTRACT_ADDRESS = '0x3E9c46064B5f8Ab4605506841076059F3e93fbb0';
 export const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network';
 export const EXPLORER_URL = 'https://shannon-explorer.somnia.network';
 
@@ -346,8 +346,8 @@ export const getGlobalStats = async () => {
       // Return default values if there's an error
       return {
         totalMined: 0,
-        remainingSupply: 777777777000,
-        totalSupply: 777777777000
+        remainingSupply: 777777000,
+        totalSupply: 777777000
       };
     }
   }
@@ -370,8 +370,8 @@ export const getGlobalStats = async () => {
     // Return default values if there's an error
     return {
       totalMined: 0,
-      remainingSupply: 777777777000,
-      totalSupply: 777777777000
+      remainingSupply: 777777000,
+      totalSupply: 777777000
     };
   }
 };

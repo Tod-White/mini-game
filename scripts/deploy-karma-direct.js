@@ -1,4 +1,4 @@
-// Direct deployment script without using Hardhat runtime
+// Direct deployment script for FaithToken (777,777,000 supply) without using Hardhat runtime
 const { ethers } = require('ethers');
 const fs = require('fs');
 require('dotenv').config();
@@ -54,7 +54,7 @@ async function main() {
   
   // Deploy contract
   console.log("Deploying Faith Token contract...");
-  console.log("(Supply: 777,777,777,000 FAITH, 1,000 tokens per prayer action)");
+  console.log("(Supply: 777,777,000 FAITH, 1,000 tokens per prayer action)");
   
   const factory = new ethers.ContractFactory(
     contractJson.abi, 

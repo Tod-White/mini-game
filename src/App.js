@@ -32,8 +32,8 @@ function App() {
   });
   const [globalStats, setGlobalStats] = useState({
     totalMined: 0,
-    totalSupply: 77770000,
-    remainingSupply: 77770000,
+    totalSupply: 777777000,
+    remainingSupply: 777777000,
   });
   const [txHash, setTxHash] = useState(null);
   const [txStatus, setTxStatus] = useState(null);
@@ -44,11 +44,11 @@ function App() {
   const [recentPray, setRecentMining] = useState(null);
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(true);
   const [showDeployNotice, setShowDeployNotice] = useState(false);
-  const [showDocNotice, setShowDocNotice] = useState(false);
+  const [showAboutPopup, setShowAboutPopup] = useState(false);
   
   // Refs for dropdown containers
   const deployRef = useRef(null);
-  const docRef = useRef(null);
+  const aboutRef = useRef(null);
 
   // Connect wallet handler
   const handleConnect = async (connectedAccount) => {
@@ -378,10 +378,10 @@ function App() {
         setShowDeployNotice(false);
       }
       
-      if (showDocNotice && 
-          docRef.current && 
-          !docRef.current.contains(event.target)) {
-        setShowDocNotice(false);
+      if (showAboutPopup && 
+          aboutRef.current && 
+          !aboutRef.current.contains(event.target)) {
+        setShowAboutPopup(false);
       }
     }
     
@@ -389,17 +389,17 @@ function App() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showDeployNotice, showDocNotice]);
+  }, [showDeployNotice, showAboutPopup]);
 
   // Toggle deploy notice
   const toggleDeployNotice = () => {
     setShowDeployNotice(prev => !prev);
-    setShowDocNotice(false);
+    setShowAboutPopup(false);
   };
 
-  // Toggle documentation notice
-  const toggleDocNotice = () => {
-    setShowDocNotice(prev => !prev);
+  // Toggle about popup
+  const toggleAboutPopup = () => {
+    setShowAboutPopup(prev => !prev);
     setShowDeployNotice(false);
   };
 
@@ -426,15 +426,10 @@ function App() {
               </div>
             )}
           </div>
-          <div className="dropdown-container" ref={docRef}>
-            <button className="nav-button" onClick={toggleDocNotice}>
-              Documentation
+          <div className="dropdown-container" ref={aboutRef}>
+            <button className="nav-button" onClick={toggleAboutPopup}>
+              About
             </button>
-            {showDocNotice && (
-              <div className="dropdown-notice">
-                Coming soon
-              </div>
-            )}
           </div>
           <a 
             href="https://x.com/MetaDogeisme" 
@@ -451,6 +446,25 @@ function App() {
       
       <main className="app-main">
         <div className="game-container">
+          <div className="airdrop-prompt stats-item" style={{
+            color: '#FFD700',
+            fontWeight: 'bold',
+            fontSize: '0.95rem',
+            margin: '0 0 24px 0',
+            padding: '14px',
+            textAlign: 'center',
+            textShadow: '0 2px 4px rgba(0,0,0,0.18)',
+            width: '100%',
+            maxWidth: '550px',
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '50px',
+          }}>
+            100 STT tokens will be airdropped to Top 100 holders after 7 days 🔥
+          </div>
           <PrayerHands 
             status={prayingStatus} 
             onPray={handlePray} 
@@ -525,6 +539,22 @@ function App() {
           <p>© 2025 pray.fun</p>
         </div>
       </footer>
+      
+      {showAboutPopup && (
+        <div className="about-popup-overlay" onClick={toggleAboutPopup}>
+          <div className="about-popup" onClick={e => e.stopPropagation()}>
+            <h2>Welcome to Praydotfun — Where Praying Brings You Rewards!</h2>
+            <div style={{ textAlign: 'center', fontSize: '1rem', fontWeight: 'normal', color: '#FFD700', marginBottom: '12px' }}>
+              (Keep updating)
+            </div>
+            <p>Feeling stressed? Overwhelmed by the craziness of the world? On Praydotfun, you can turn a simple moment of prayer into real rewards.<br/><br/>
+            Built on the powerful Somnia network, Praydotfun lets you "Pray to Earn" — it's as easy as sending a blessing into the universe and receiving new, exciting tokens in return.<br/><br/>
+            Instead of complicated trading or mining, all you need is a little hope, a little fun, and a few seconds of your time.<br/><br/>
+            Whether you're a crypto enthusiast or just looking for a new way to relax and engage, Praydotfun transforms a stressful day into a joyful, rewarding experience — all on-chain, all transparent, all yours.</p>
+            <button className="close-popup" onClick={toggleAboutPopup}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

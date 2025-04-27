@@ -33,7 +33,7 @@ const PrayerStats = ({ balance, mined, totalMined, totalSupply }) => {
             </svg>
           </div>
           <div className="stat-value">{formatNumber(balance)}</div>
-          <div className="stat-label">Faith Balance</div>
+          <div className="stat-label">Balance</div>
         </div>
         
         <div className="stat-card">

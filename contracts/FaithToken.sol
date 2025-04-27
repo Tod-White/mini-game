@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract FaithToken is ERC20 {
     // Each prayer action gives 1,000 tokens
     uint256 public constant TOKENS_PER_MINE = 1_000 * 10**18;
-    uint256 public constant MAX_SUPPLY = 777_777_777_000 * 10**18;
+    uint256 public constant MAX_SUPPLY = 777_777_000 * 10**18;
     uint256 public totalMined = 0;
     
     // Track individual prayer stats

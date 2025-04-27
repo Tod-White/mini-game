@@ -42,7 +42,7 @@ const PrayButton = ({ status, isConnected, onPray }) => {
       
       {status === 'prayed-out' && (
         <div className="prayed-out-message">
-          All 777,777,777,000 Faith tokens have been claimed. Praying is now closed.
+          All 777,777,000 Faith tokens have been claimed. Praying is now closed.
         </div>
       )}
     </div>

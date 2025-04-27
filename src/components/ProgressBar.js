@@ -9,8 +9,8 @@ const ProgressBar = ({ progress, remaining, total, title = 'Faith' }) => {
   // Ensure we have a valid progress value (prevent NaN or negative values)
   const safeProgress = isNaN(progress) || progress < 0 ? 0 : progress;
   
-  // Format with 2 decimal places
-  const percentText = `${safeProgress.toFixed(2)}%`;
+  // Format with 3 decimal places
+  const percentText = `${safeProgress.toFixed(3)}%`;
   
   return (
     <div className="progress-container">

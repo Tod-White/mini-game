@@ -28,3 +28,6 @@ artifacts/
 # IDE files
 .idea/
 .vscode/
+
+# Ignore media files
+Pray.mp4

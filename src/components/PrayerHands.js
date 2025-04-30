@@ -231,7 +231,7 @@ const PrayerHands = ({ status, onPray, isConnected, onConnectWallet, isCorrectNe
             animationDuration: `${point.duration}ms`
           }}
         >
-          Karma+1
+          FAITH+1
         </div>
       ))}
     </div>

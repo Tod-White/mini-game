@@ -1,0 +1,291 @@
+# Development Plan: Token and Prayer System
+
+## System Overview
+A system that allows users to create their own tokens and enables others to pray for these tokens, with a simple 1:1 token distribution ratio.
+
+## Core Features
+
+### 1. Token Creation
+- **Creator Requirements**:
+  - Connected wallet
+  - Token name
+  - Token symbol
+  - Initial supply
+
+- **Process**:
+  1. User connects wallet
+  2. User inputs token details
+  3. Smart contract is deployed
+  4. Initial supply is minted
+
+### 2. Prayer System
+- **Prayer Mechanics**:
+  - Users can select 1-1000 prayers per transaction
+  - Each prayer = 1 token
+  - Example: 100 prayers = 100 tokens
+
+- **User Flow**:
+  1. Browse available tokens
+  2. Select desired token
+  3. Choose number of prayers (1-1000)
+  4. Perform prayer
+  5. Receive tokens (1:1 ratio)
+
+## Technical Implementation
+
+### Smart Contracts
+1. **TokenFactory.sol**
+   - Manages token creation
+   - Tracks deployed tokens
+   - Handles token metadata
+
+2. **PrayableToken.sol**
+   - ERC20 token implementation
+   - Prayer function with amount parameter
+   - Supply tracking
+   - Basic token information
+
+### Frontend Components
+1. **Token Creation Page**
+   - Wallet connection
+   - Token details form
+   - Deployment process
+
+2. **Token Browser**
+   - List of available tokens
+   - Token details view
+   - Prayer interface
+
+3. **Prayer Interface**
+   - Prayer amount selector (1-1000)
+   - Prayer action button
+   - Transaction status
+   - Token receipt confirmation
+
+## Development Phases
+
+### Phase 1: Smart Contract Development
+1. Implement TokenFactory.sol
+2. Implement PrayableToken.sol
+3. Write deployment scripts
+4. Test contract functionality
+
+### Phase 2: Frontend Development
+1. Create token creation interface
+2. Implement token browser
+3. Develop prayer interface
+4. Add wallet integration
+
+### Phase 3: Testing & Deployment
+1. Smart contract testing
+2. Frontend testing
+3. Integration testing
+4. Mainnet deployment
+
+## Security Considerations
+- Input validation for prayer amounts
+- Supply limit checks
+- Gas optimization
+- Basic access controls
+
+## Future Considerations
+- Token discovery features
+- User profiles
+- Prayer history
+- Social sharing
+
+## UI/UX Specifications
+
+### Main Navigation
+- **Pray Button** (Existing)
+  - Repurpose existing button to redirect to Token Browser
+  - Maintain exact current styling:
+    - Background: rgba(74, 0, 128, 0.5)
+    - Border: 1px solid rgba(255, 255, 255, 0.15)
+    - Border radius: var(--button-border-radius)
+    - Hover effect: translateY(-2px)
+    - Box shadow: 0 2px 4px rgba(0, 0, 0, 0.2)
+
+- **Deploy Button** (New)
+  - Add alongside existing Pray button
+  - Match exact Pray button styling
+  - Same hover and active states
+  - Same font size and weight
+
+### Page Layouts
+
+1. **Token Browser Page**
+   - Use existing game-container styling:
+     - Background: var(--card-bg)
+     - Border radius: var(--card-border-radius)
+     - Box shadow: var(--card-shadow)
+     - Backdrop filter: blur(10px)
+     - Border: 1px solid rgba(255, 255, 255, 0.1)
+   - Grid layout for tokens
+   - Each token card matches existing card styling
+
+2. **Token Creation Page**
+   - Use same game-container layout
+   - Form inputs match existing styling:
+     - Background: rgba(74, 0, 128, 0.5)
+     - Border: 1px solid rgba(255, 255, 255, 0.15)
+     - Border radius: var(--button-border-radius)
+   - Deploy button matches Pray button styling
+
+3. **Prayer Page** (Per Token)
+   - Exact copy of existing Faith token page:
+     - Same container layout
+     - Same prayer animation
+     - Same progress bar
+     - Same stats display
+     - Same transaction status styling
+   - Only difference: Prayer amount selector (1-1000)
+
+### Visual Consistency
+- Maintain exact:
+  - Color scheme (purple theme)
+  - Typography
+  - Spacing (15px, 25px gaps)
+  - Card shadows
+  - Border styles
+  - Animation timings
+  - Loading states
+  - Error messages
+  - Success messages
+
+### Component Reuse
+- Reuse existing components:
+  - PrayerHands
+  - ProgressBar
+  - PrayerStats
+  - PrayingAnimation
+  - BackgroundParticles
+  - WalletConnector
+  - Transaction status components
+
+### Responsive Design
+- Maintain existing responsive breakpoints:
+  - 768px for tablets
+  - 480px for mobile
+- Same header adjustments
+- Same button stacking
+- Same card width adjustments
+
+### User Flow Integration
+1. **From Home Page**:
+   - Pray button → Token Browser
+   - Deploy button → Token Creation
+
+2. **From Token Browser**:
+   - Select token → Prayer Page
+   - Deploy button → Token Creation
+
+3. **From Prayer Page**:
+   - Back to Token Browser
+   - Consistent navigation pattern
+
+## File Modifications and Precautions
+
+### Files to Modify
+
+1. **App.js**
+   - Add new routes for Token Browser and Token Creation
+   - Modify existing Pray button to redirect to Token Browser
+   - Add Deploy button navigation
+   - Keep existing Faith token functionality intact
+   - Add new state management for token browsing
+
+2. **App.css**
+   - Add new styles for Token Browser and Token Creation pages
+   - Keep existing styles for Faith token page
+   - Add styles for new Deploy button
+   - Maintain existing responsive design
+
+3. **New Files to Create**
+   - `src/pages/TokenBrowser.js`
+   - `src/pages/TokenCreation.js`
+   - `src/components/TokenCard.js`
+   - `src/components/PrayerAmountSelector.js`
+   - `src/contracts/PrayableToken.sol`
+   - `src/contracts/TokenFactory.sol`
+   - `src/utils/tokenFactory.js`
+
+### Files to Preserve
+1. **Existing Components** (Do not modify):
+   - `src/components/PrayerHands.js`
+   - `src/components/ProgressBar.js`
+   - `src/components/PrayerStats.js`
+   - `src/components/PrayingAnimation.js`
+   - `src/components/BackgroundParticles.js`
+   - `src/components/WalletConnector.js`
+
+2. **Existing Styles** (Do not modify):
+   - All existing CSS classes for Faith token page
+   - Existing button styles
+   - Existing card styles
+   - Existing animation styles
+
+### Modification Strategy
+
+1. **App.js Changes**
+   ```javascript
+   // Add new routes while preserving existing
+   const routes = {
+     '/': <FaithTokenPage />,
+     '/tokens': <TokenBrowser />,
+     '/create': <TokenCreation />
+   };
+   
+   // Modify Pray button click handler
+   const handlePrayClick = () => {
+     navigate('/tokens');
+   };
+   
+   // Add Deploy button
+   const handleDeployClick = () => {
+     navigate('/create');
+   };
+   ```
+
+2. **App.css Additions**
+   ```css
+   /* New styles should be added after existing styles */
+   .token-browser {
+     /* New styles */
+   }
+   
+   .token-creation {
+     /* New styles */
+   }
+   ```
+
+3. **Component Creation**
+   - Create new components in separate files
+   - Import and reuse existing components
+   - Maintain existing component structure
+
+### Testing Strategy
+
+1. **Preserve Existing Functionality**
+   - Test Faith token page remains unchanged
+   - Verify existing animations work
+   - Confirm wallet connection still functions
+   - Check existing error handling
+
+2. **New Features Testing**
+   - Test token browsing
+   - Verify token creation
+   - Check prayer amount selection
+   - Confirm token distribution
+
+### Rollback Plan
+
+1. **Version Control**
+   - Create feature branch for development
+   - Regular commits with clear messages
+   - Document all changes made
+
+2. **Backup Strategy**
+   - Keep copies of modified files
+   - Document original file states
+   - Prepare rollback scripts

@@ -4,9 +4,9 @@
   padding: 0 8px;
 }
 
-.progress-bar {
+.progress-container > .progress-bar {
   width: 100%;
-  height: 25px;
+  height: 25px !important;
   background-color: var(--progress-bg);
   border-radius: 30px;
   position: relative;
@@ -15,8 +15,8 @@
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
-.progress-fill {
-  height: 100%;
+.progress-container > .progress-bar > .progress-fill {
+  height: 100% !important;
   background: linear-gradient(90deg, #FF9A9E, #FAD0C4);
   border-radius: 30px;
   transition: width 0.8s ease;
@@ -37,7 +37,7 @@
   animation: progressShine 2s infinite;
 }
 
-.progress-text {
+.progress-container > .progress-bar > .progress-text {
   position: absolute;
   top: 0;
   left: 0;

@@ -30,9 +30,72 @@ const KarmaTokenABI = [
   "event MiningExhausted(uint256 totalMined, uint256 timestamp)"
 ];
 
+// Factory contract ABI
+const FactoryABI = [
+  // Read-only functions
+  "function faithToken() view returns (address)",
+  "function requiredBurnAmount() view returns (uint256)",
+  "function getDeployedTokenCount() view returns (uint256)",
+  "function getTokenByIndex(uint256 index) view returns (tuple(string name, string symbol, address tokenAddress, address creator, uint256 totalSupply, uint256 timestamp))",
+  "function getTokenByAddress(address tokenAddress) view returns (tuple(string name, string symbol, address tokenAddress, address creator, uint256 totalSupply, uint256 timestamp))",
+  "function getTokensByCreator(address creator) view returns (tuple(string name, string symbol, address tokenAddress, address creator, uint256 totalSupply, uint256 timestamp)[])",
+  "function getAllTokens() view returns (tuple(string name, string symbol, address tokenAddress, address creator, uint256 totalSupply, uint256 timestamp)[])",
+  
+  // Write functions
+  "function createToken(string name, string symbol, uint256 totalSupply) returns (address)",
+  
+  // Events
+  "event TokenDeployed(address indexed tokenAddress, string name, string symbol, address indexed creator, uint256 totalSupply, uint256 timestamp)",
+  "event BurnAmountChanged(uint256 oldAmount, uint256 newAmount)"
+];
+
+// FAITH Token ABI
+const FaithTokenABI = [
+  // Read-only functions
+  "function balanceOf(address owner) view returns (uint256)",
+  "function totalSupply() view returns (uint256)",
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function decimals() view returns (uint8)",
+  "function approve(address spender, uint256 amount) returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)",
+  
+  // Mining functions
+  "function mine() external",
+  "function getMinerStats(address miner) external view returns (uint256)",
+  "function getRemainingSupply() external view returns (uint256)",
+  "function totalMined() external view returns (uint256)",
+  "function TOKENS_PER_MINE() external view returns (uint256)",
+  "function MAX_SUPPLY() external view returns (uint256)",
+  
+  // Events
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
+  "event Mining(address indexed miner, uint256 amount, uint256 timestamp)",
+  "event MiningExhausted(uint256 totalMined, uint256 timestamp)"
+];
+
+// Prayer Token ABI (deployed tokens)
+const PrayerTokenABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function totalSupply() view returns (uint256)",
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
+  "function decimals() view returns (uint8)",
+  "function mine() external",
+  "function getMinerStats(address miner) external view returns (uint256)",
+  "function getRemainingSupply() external view returns (uint256)",
+  "function totalMined() external view returns (uint256)",
+  "function TOKENS_PER_MINE() external view returns (uint256)",
+  "function MAX_SUPPLY() external view returns (uint256)",
+  "event Mining(address indexed miner, uint256 amount, uint256 timestamp)",
+  "event MiningExhausted(uint256 totalMined, uint256 timestamp)"
+];
+
 // Constants
 export const SOMNIA_CHAIN_ID = 50312;
-export const CONTRACT_ADDRESS = '0xD3D811fE6eDb5f477C1eD985DC8D9633853C675e';
+export const CONTRACT_ADDRESS = '0x3E9c46064B5f8Ab4605506841076059F3e93fbb0';
+export const FACTORY_ADDRESS = '0x178465595D9fDc350D28DEf432ad8684F1de48A5';
+export const FAITH_TOKEN_ADDRESS = '0x3E9c46064B5f8Ab4605506841076059F3e93fbb0';
 export const SOMNIA_RPC_URL = 'https://dream-rpc.somnia.network';
 export const EXPLORER_URL = 'https://shannon-explorer.somnia.network';
 
@@ -60,6 +123,8 @@ export const SOMNIA_NETWORK_PARAMS = {
 let provider;
 let signer;
 let karmaTokenContract;
+let factoryContract;
+let faithTokenContract;
 let networkSwitchListeners = [];
 
 // Transaction listeners
@@ -69,7 +134,8 @@ const transactionListeners = {};
 const eventListeners = {
   mining: [],
   transfer: [],
-  exhausted: []
+  exhausted: [],
+  tokenDeployed: []
 };
 
 // Check if MetaMask is installed
@@ -111,8 +177,9 @@ export const initBlockchain = async () => {
       };
     }
     
-    // Initialize contract connection
-    karmaTokenContract = new Contract(CONTRACT_ADDRESS, KarmaTokenABI, signer);
+    // Initialize contract connections
+    faithTokenContract = new Contract(CONTRACT_ADDRESS, FaithTokenABI, signer);
+    factoryContract = new Contract(FACTORY_ADDRESS, FactoryABI, signer);
     
     // Set up event listeners
     setupEventListeners();
@@ -130,10 +197,10 @@ export const initBlockchain = async () => {
 
 // Set up event listeners
 const setupEventListeners = () => {
-  if (!karmaTokenContract) return;
+  if (!faithTokenContract) return;
   
   // Mining event
-  karmaTokenContract.on("Mining", (miner, amount, timestamp) => {
+  faithTokenContract.on("Mining", (miner, amount, timestamp) => {
     const event = {
       miner,
       amount: formatUnits(amount, 18),
@@ -148,7 +215,7 @@ const setupEventListeners = () => {
   });
   
   // Transfer event
-  karmaTokenContract.on("Transfer", (from, to, value) => {
+  faithTokenContract.on("Transfer", (from, to, value) => {
     const event = {
       from,
       to,
@@ -162,7 +229,7 @@ const setupEventListeners = () => {
   });
   
   // MiningExhausted event
-  karmaTokenContract.on("MiningExhausted", (totalMined, timestamp) => {
+  faithTokenContract.on("MiningExhausted", (totalMined, timestamp) => {
     const event = {
       totalMined: formatUnits(totalMined, 18),
       timestamp: timestamp.toNumber(),
@@ -174,6 +241,27 @@ const setupEventListeners = () => {
     // Notify all listeners
     eventListeners.exhausted.forEach(callback => callback(event));
   });
+  
+  // Add Factory contract event listeners if initialized
+  if (factoryContract) {
+    // TokenDeployed event
+    factoryContract.on("TokenDeployed", (tokenAddress, name, symbol, creator, totalSupply, timestamp) => {
+      const event = {
+        tokenAddress,
+        name,
+        symbol,
+        creator,
+        totalSupply: formatUnits(totalSupply, 18),
+        timestamp: timestamp.toNumber(),
+        date: new Date(timestamp.toNumber() * 1000)
+      };
+      
+      console.log("Token deployed event:", event);
+      
+      // Notify all listeners
+      eventListeners.tokenDeployed.forEach(callback => callback(event));
+    });
+  }
 };
 
 // Subscribe to event
@@ -186,7 +274,7 @@ export const subscribeToEvent = (eventName, callback) => {
   eventListeners[eventName].push(callback);
   
   // Initialize event listeners if not already done
-  if (karmaTokenContract && eventListeners[eventName].length === 1) {
+  if ((faithTokenContract || factoryContract) && eventListeners[eventName].length === 1) {
     setupEventListeners();
   }
 };
@@ -210,8 +298,8 @@ export const addNetworkSwitchListener = (listener) => {
     // Initial check
     setTimeout(async () => {
       try {
-        const provider = new BrowserProvider(window.ethereum);
-        const network = await provider.getNetwork();
+        const ethereumProvider = new BrowserProvider(window.ethereum);
+        const network = await ethereumProvider.getNetwork();
         const isCorrectNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
         console.log("[blockchain.js] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", isCorrectNetwork);
         
@@ -312,34 +400,35 @@ export const switchToSomniaNetwork = async () => {
 
 // Get balance
 export const getBalance = async (address) => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+  if (!faithTokenContract) throw new Error("Contract not initialized");
   
-  const balance = await karmaTokenContract.balanceOf(address);
+  const balance = await faithTokenContract.balanceOf(address);
   return formatUnits(balance, 18);
 };
 
 // Get miner stats
 export const getMinerStats = async (address) => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+  if (!faithTokenContract) throw new Error("Contract not initialized");
   
-  const stats = await karmaTokenContract.getMinerStats(address);
+  const stats = await faithTokenContract.getMinerStats(address);
   return formatUnits(stats, 18);
 };
 
 // Get global stats about the contract
 export const getGlobalStats = async () => {
   try {
-    if (!karmaTokenContract) {
+    if (!faithTokenContract) {
       console.log("Contract not initialized, creating read-only instance...");
       
       // Create a read-only contract instance
       const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
-      const readOnlyContract = new Contract(CONTRACT_ADDRESS, KarmaTokenABI, readProvider);
-      
+      const readOnlyContract = new Contract(CONTRACT_ADDRESS, FaithTokenABI, readProvider);
+    
       // Get stats from contract
       const totalMined = await readOnlyContract.totalMined();
       const remainingSupply = await readOnlyContract.getRemainingSupply();
       const totalSupply = await readOnlyContract.MAX_SUPPLY();
+      
       
       console.log("[getGlobalStats] totalSupply:", totalSupply.toString());
       return {
@@ -350,9 +439,9 @@ export const getGlobalStats = async () => {
     }
     
     // Get stats from initialized contract
-    const totalMined = await karmaTokenContract.totalMined();
-    const remainingSupply = await karmaTokenContract.getRemainingSupply();
-    const totalSupply = await karmaTokenContract.MAX_SUPPLY();
+    const totalMined = await faithTokenContract.totalMined();
+    const remainingSupply = await faithTokenContract.getRemainingSupply();
+    const totalSupply = await faithTokenContract.MAX_SUPPLY();
     
     console.log("[getGlobalStats] totalSupply (connected):", totalSupply.toString());
     return {
@@ -363,23 +452,6 @@ export const getGlobalStats = async () => {
   } catch (error) {
     console.error("Error getting global stats:", error);
     throw error;
-  }
-};
-
-// Subscribe to transaction status updates
-export const subscribeToTransaction = (txHash, callback) => {
-  if (!txHash) return;
-  
-  transactionListeners[txHash] = callback;
-  
-  // Start tracking the transaction
-  trackTransaction(txHash);
-};
-
-// Unsubscribe from transaction updates
-export const unsubscribeFromTransaction = (txHash) => {
-  if (transactionListeners[txHash]) {
-    delete transactionListeners[txHash];
   }
 };
 
@@ -445,14 +517,31 @@ const trackTransaction = async (txHash) => {
   }
 };
 
-// Mine (pray) for Karma tokens
-export const prayForKarma = async () => {
-  if (!karmaTokenContract || !signer) {
+// Subscribe to transaction status updates
+export const subscribeToTransaction = (txHash, callback) => {
+  if (!txHash) return;
+  
+  transactionListeners[txHash] = callback;
+  
+  // Start tracking the transaction
+  trackTransaction(txHash);
+};
+
+// Unsubscribe from transaction updates
+export const unsubscribeFromTransaction = (txHash) => {
+  if (transactionListeners[txHash]) {
+    delete transactionListeners[txHash];
+  }
+};
+
+// Mine (pray) for Faith tokens
+export const prayForFaith = async () => {
+  if (!faithTokenContract || !signer) {
     throw new Error("Contract or signer not initialized");
   }
   
   try {
-    const tx = await karmaTokenContract.mine();
+    const tx = await faithTokenContract.mine();
     console.log("Prayer transaction sent:", tx.hash);
     
     // Start tracking transaction
@@ -482,4 +571,281 @@ export const getTopHolders = async () => {
     console.error("Error fetching top holders:", error);
     throw error;
   }
+};
+
+// =================== FACTORY CONTRACT FUNCTIONS ===================
+
+// Get the required burn amount for token deployment
+export const getRequiredBurnAmount = async () => {
+  try {
+    if (!factoryContract) {
+      console.log("Factory contract not initialized, creating read-only instance...");
+      // Create a read-only contract instance
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(FACTORY_ADDRESS, FactoryABI, readProvider);
+      
+      const burnAmount = await readOnlyContract.requiredBurnAmount();
+      return formatUnits(burnAmount, 18);
+    }
+    
+    const burnAmount = await factoryContract.requiredBurnAmount();
+    return formatUnits(burnAmount, 18);
+  } catch (error) {
+    console.error("Error getting required burn amount:", error);
+    throw error;
+  }
+};
+
+// Get FAITH token balance
+export const getFaithBalance = async (address) => {
+  try {
+    if (!faithTokenContract) {
+      console.log("FAITH token contract not initialized, creating read-only instance...");
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(FAITH_TOKEN_ADDRESS, FaithTokenABI, readProvider);
+      
+      const balance = await readOnlyContract.balanceOf(address);
+      return formatUnits(balance, 18);
+    }
+    
+    const balance = await faithTokenContract.balanceOf(address);
+    return formatUnits(balance, 18);
+  } catch (error) {
+    console.error("Error getting FAITH balance:", error);
+    throw error;
+  }
+};
+
+// Check if factory has allowance to spend FAITH tokens
+export const getFaithAllowance = async (ownerAddress) => {
+  try {
+    if (!faithTokenContract) {
+      console.log("FAITH token contract not initialized, creating read-only instance...");
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(FAITH_TOKEN_ADDRESS, FaithTokenABI, readProvider);
+      
+      const allowance = await readOnlyContract.allowance(ownerAddress, FACTORY_ADDRESS);
+      return formatUnits(allowance, 18);
+    }
+    
+    const allowance = await faithTokenContract.allowance(ownerAddress, FACTORY_ADDRESS);
+    return formatUnits(allowance, 18);
+  } catch (error) {
+    console.error("Error getting FAITH allowance:", error);
+    throw error;
+      }
+};
+
+// Approve factory to spend FAITH tokens
+export const approveFaithForFactory = async (amount) => {
+  if (!faithTokenContract || !signer) {
+    throw new Error("FAITH token contract or signer not initialized");
+  }
+  
+  try {
+    const amountWei = parseUnits(amount.toString(), 18);
+    const tx = await faithTokenContract.approve(FACTORY_ADDRESS, amountWei);
+    console.log("FAITH approval transaction sent:", tx.hash);
+    
+    // Track transaction
+    trackTransaction(tx.hash);
+    
+    return tx.hash;
+  } catch (error) {
+    console.error("FAITH approval error:", error);
+    throw error;
+  }
+};
+
+// Deploy a new prayer token
+export const deployPrayerToken = async (name, symbol, totalSupply) => {
+  if (!factoryContract || !signer) {
+    throw new Error("Factory contract or signer not initialized");
+  }
+  
+  try {
+    const tx = await factoryContract.createToken(name, symbol, totalSupply);
+    console.log("Token deployment transaction sent:", tx.hash);
+    
+    // Track transaction
+    trackTransaction(tx.hash);
+    
+    return tx.hash;
+  } catch (error) {
+    console.error("Token deployment error:", error);
+    throw error;
+  }
+};
+
+// Get the total number of deployed tokens
+export const getDeployedTokenCount = async () => {
+  try {
+    if (!factoryContract) {
+      console.log("Factory contract not initialized, creating read-only instance...");
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(FACTORY_ADDRESS, FactoryABI, readProvider);
+      
+      return Number(await readOnlyContract.getDeployedTokenCount());
+    }
+    
+    return Number(await factoryContract.getDeployedTokenCount());
+  } catch (error) {
+    console.error("Error getting deployed token count:", error);
+    throw error;
+  }
+};
+
+// Get token by index
+export const getTokenByIndex = async (index) => {
+  try {
+    if (!factoryContract) {
+      console.log("Factory contract not initialized, creating read-only instance...");
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(FACTORY_ADDRESS, FactoryABI, readProvider);
+      
+      const token = await readOnlyContract.getTokenByIndex(index);
+      return formatTokenInfo(token);
+    }
+    
+    const token = await factoryContract.getTokenByIndex(index);
+    return formatTokenInfo(token);
+  } catch (error) {
+    console.error(`Error getting token at index ${index}:`, error);
+    throw error;
+  }
+};
+
+// Get all deployed tokens
+export const getAllTokens = async () => {
+  try {
+    if (!factoryContract) {
+      console.log("Factory contract not initialized, creating read-only instance...");
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(FACTORY_ADDRESS, FactoryABI, readProvider);
+      
+      const tokens = await readOnlyContract.getAllTokens();
+      return tokens.map(formatTokenInfo);
+    }
+    
+    const tokens = await factoryContract.getAllTokens();
+    return tokens.map(formatTokenInfo);
+  } catch (error) {
+    console.error("Error getting all tokens:", error);
+    throw error;
+  }
+};
+
+// Get tokens created by a specific address
+export const getTokensByCreator = async (creatorAddress) => {
+  try {
+    if (!factoryContract) {
+      console.log("Factory contract not initialized, creating read-only instance...");
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(FACTORY_ADDRESS, FactoryABI, readProvider);
+      
+      const tokens = await readOnlyContract.getTokensByCreator(creatorAddress);
+      return tokens.map(formatTokenInfo);
+    }
+    
+    const tokens = await factoryContract.getTokensByCreator(creatorAddress);
+    return tokens.map(formatTokenInfo);
+  } catch (error) {
+    console.error(`Error getting tokens for creator ${creatorAddress}:`, error);
+    throw error;
+  }
+};
+
+// Get token details by address
+export const getTokenByAddress = async (tokenAddress) => {
+  try {
+    if (!factoryContract) {
+      console.log("Factory contract not initialized, creating read-only instance...");
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(FACTORY_ADDRESS, FactoryABI, readProvider);
+      
+      const token = await readOnlyContract.getTokenByAddress(tokenAddress);
+      return formatTokenInfo(token);
+    }
+    
+    const token = await factoryContract.getTokenByAddress(tokenAddress);
+    return formatTokenInfo(token);
+  } catch (error) {
+    console.error(`Error getting token at address ${tokenAddress}:`, error);
+    throw error;
+  }
+};
+
+// Get details for a specific Prayer token (not from factory)
+export const getPrayerTokenDetails = async (tokenAddress) => {
+  try {
+    // Create a read-only contract instance for the specific prayer token
+    const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+    const tokenContract = new Contract(tokenAddress, PrayerTokenABI, readProvider);
+
+    // Get basic token info
+    const [name, symbol, totalSupply, totalMined, remainingSupply, tokensPerMine] = await Promise.all([
+      tokenContract.name(),
+      tokenContract.symbol(),
+      tokenContract.MAX_SUPPLY(),
+      tokenContract.totalMined(),
+      tokenContract.getRemainingSupply(),
+      tokenContract.TOKENS_PER_MINE()
+    ]);
+    
+    return {
+      name,
+      symbol,
+      address: tokenAddress,
+      totalSupply: formatUnits(totalSupply, 18),
+      totalMined: formatUnits(totalMined, 18),
+      remainingSupply: formatUnits(remainingSupply, 18),
+      tokensPerMine: formatUnits(tokensPerMine, 18),
+      progress: totalSupply > 0 ? (Number(totalMined) / Number(totalSupply)) * 100 : 0
+    };
+  } catch (error) {
+    console.error(`Error getting prayer token details for ${tokenAddress}:`, error);
+    throw error;
+  }
+};
+
+// Pray for a specific Prayer token
+export const prayForToken = async (tokenAddress) => {
+  try {
+    if (!signer) {
+      throw new Error("Signer not initialized");
+    }
+    
+    // Create contract instance for the specific prayer token
+    const tokenContract = new Contract(tokenAddress, PrayerTokenABI, signer);
+    
+    // Call mine() function
+    const tx = await tokenContract.mine();
+    console.log(`Prayer transaction sent for token ${tokenAddress}:`, tx.hash);
+    
+    // Track transaction
+    trackTransaction(tx.hash);
+    
+    return tx.hash;
+  } catch (error) {
+    console.error(`Error praying for token at ${tokenAddress}:`, error);
+    throw error;
+  }
+};
+
+// Format token info from contract response
+const formatTokenInfo = (token) => {
+  // Convert timestamp to number safely
+  const timestampNum = typeof token.timestamp.toNumber === 'function' 
+    ? token.timestamp.toNumber() 
+    : Number(token.timestamp);
+  
+  return {
+    name: token.name,
+    symbol: token.symbol,
+    tokenAddress: token.tokenAddress,
+    creator: token.creator,
+    totalSupply: formatUnits(token.totalSupply, 18),
+    timestamp: timestampNum,
+    date: new Date(timestampNum * 1000)
+  };
 }; 

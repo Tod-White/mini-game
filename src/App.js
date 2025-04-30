@@ -7,12 +7,14 @@ import PrayerStats from './components/PrayerStats';
 import PrayingAnimation from './components/PrayingAnimation';
 import BackgroundParticles from './components/BackgroundParticles';
 import AllocationStats from './components/AllocationStats';
+import DeployPage from './components/deploy/DeployPage';
+import FactoryPage from './components/factory/FactoryPage';
 import { 
   addNetworkSwitchListener, 
   getBalance, 
   getMinerStats, 
   getGlobalStats, 
-  prayForKarma,
+  prayForFaith,
   subscribeToTransaction,
   unsubscribeFromTransaction,
   subscribeToEvent,
@@ -32,8 +34,8 @@ function App() {
   });
   const [globalStats, setGlobalStats] = useState({
     totalMined: 0,
-    totalSupply: 77770000,
-    remainingSupply: 77770000,
+    totalSupply: 777777000,
+    remainingSupply: 777777000,
   });
   const [txHash, setTxHash] = useState(null);
   const [txStatus, setTxStatus] = useState(null);
@@ -43,11 +45,12 @@ function App() {
   const [showPrayAnimation, setShowMiningAnimation] = useState(false);
   const [recentPray, setRecentMining] = useState(null);
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(true);
-  const [showDeployNotice, setShowDeployNotice] = useState(false);
-  const [showDocNotice, setShowDocNotice] = useState(false);
+  const [showDeployPage, setShowDeployPage] = useState(false);
+  const [showFactoryPage, setShowFactoryPage] = useState(false);
+  const [currentPage, setCurrentPage] = useState('prayer'); // prayer, deploy, factory
+  const [showAboutModal, setShowAboutModal] = useState(false);
   
   // Refs for dropdown containers
-  const deployRef = useRef(null);
   const docRef = useRef(null);
 
   // Connect wallet handler
@@ -173,7 +176,7 @@ function App() {
       if (stats.remainingSupply <= 0) {
         setMiningStatus('prayed-out');
         // Display a message that all tokens have been prayed for
-        setError("All Karma tokens have been prayed for! Praying is now closed.");
+        setError("All FAITH tokens have been prayed for! Praying is now closed.");
       }
       
       console.log("Global stats loaded:", stats, "Progress:", progress.toFixed(2) + "%");
@@ -207,7 +210,7 @@ function App() {
     setMiningStatus('prayed-out');
     
     // Show a message that praying is exhausted
-    setError("All Karma tokens have been prayed for! Praying is now closed.");
+    setError("All FAITH tokens have been prayed for! Praying is now closed.");
     
     // Update global stats
     loadGlobalStats();
@@ -255,7 +258,7 @@ function App() {
     
     try {
       // Attempt to pray for karma
-      const txHash = await prayForKarma();
+      const txHash = await prayForFaith();
       console.log("Prayer transaction submitted:", txHash);
       
       // Update the UI to indicate prayer is in progress
@@ -327,7 +330,7 @@ function App() {
   // TESTING ONLY: Simulate prayed out state
   const simulatePrayedOut = () => {
     setMiningStatus('prayed-out');
-    setError("TESTING: All Karma tokens have been prayed for! Praying is now closed.");
+    setError("TESTING: All FAITH tokens have been prayed for! Praying is now closed.");
     
     // Update global stats to show all tokens prayed
     setGlobalStats(prev => ({
@@ -372,16 +375,8 @@ function App() {
   // Handle clicks outside the dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
-      if (showDeployNotice && 
-          deployRef.current && 
-          !deployRef.current.contains(event.target)) {
-        setShowDeployNotice(false);
-      }
-      
-      if (showDocNotice && 
-          docRef.current && 
-          !docRef.current.contains(event.target)) {
-        setShowDocNotice(false);
+      if (showFactoryPage && docRef.current && !docRef.current.contains(event.target)) {
+        setShowFactoryPage(false);
       }
     }
     
@@ -389,18 +384,107 @@ function App() {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showDeployNotice, showDocNotice]);
+  }, [showFactoryPage]);
 
-  // Toggle deploy notice
-  const toggleDeployNotice = () => {
-    setShowDeployNotice(prev => !prev);
-    setShowDocNotice(false);
+  // Navigation handlers
+  const navigateToPrayer = () => {
+    setCurrentPage('prayer');
   };
 
-  // Toggle documentation notice
-  const toggleDocNotice = () => {
-    setShowDocNotice(prev => !prev);
-    setShowDeployNotice(false);
+  const navigateToFactory = () => {
+    setCurrentPage('factory');
+  };
+
+  const openDeployPage = () => {
+    setShowDeployPage(true);
+  };
+
+  const closeDeployPage = () => {
+    setShowDeployPage(false);
+  };
+
+  // Toggle about modal
+  const toggleAboutModal = () => {
+    setShowAboutModal(!showAboutModal);
+  };
+
+  // Render main content based on current page
+  const renderMainContent = () => {
+    switch (currentPage) {
+      case 'factory':
+        return <FactoryPage isConnected={isConnected} account={account} />;
+      case 'prayer':
+      default:
+        return (
+          <div className="game-container">
+            <PrayerHands 
+              status={prayingStatus} 
+              onPray={handlePray} 
+              isConnected={isConnected}
+              isCorrectNetwork={isCorrectNetwork}
+              onConnectWallet={() => document.querySelector('.connect-button')?.click()}
+            />
+            
+            <div className="controls-container">
+              {error && <div className="error-message">{error}</div>}
+              
+              {txHash && txStatus && (
+                <div className={`tx-status ${getStatusClass()}`}>
+                  <div className="tx-status-text">{getStatusText()}</div>
+                  <a 
+                    href={`${EXPLORER_URL}/tx/${txHash}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="tx-link"
+                  >
+                    View transaction
+                  </a>
+                </div>
+              )}
+              
+              <ProgressBar 
+                progress={prayProgress} 
+                remaining={globalStats.remainingSupply}
+                total={globalStats.totalSupply}
+                title="FAITH"
+              />
+            </div>
+            
+            {isConnected && (
+              <>
+                <PrayerStats 
+                  balance={prayerStats.balance} 
+                  mined={prayerStats.mined}
+                  totalMined={globalStats.totalMined}
+                  totalSupply={globalStats.totalSupply}
+                />
+                <AllocationStats />
+              </>
+            )}
+            
+            {/* Mining success animation */}
+            {showPrayAnimation && (
+              <PrayingAnimation 
+                onComplete={handleAnimationComplete} 
+              />
+            )}
+            
+            {/* Test button - disabled */}
+            {/* 
+            {process.env.NODE_ENV === 'development' && (
+              <div className="test-controls">
+                <button 
+                  onClick={simulatePrayedOut}
+                  className="test-button"
+                >
+                  Test: Simulate all tokens prayed out
+                </button>
+              </div>
+            )}
+            */}
+          </div>
+        );
+    }
   };
 
   return (
@@ -413,28 +497,28 @@ function App() {
         </div>
         
         <div className="nav-buttons">
-          <button className="nav-button" onClick={() => window.location.reload()}>
+          <button 
+            className={`nav-button ${currentPage === 'prayer' ? 'active' : ''}`} 
+            onClick={navigateToPrayer}
+          >
             Pray
           </button>
-          <div className="dropdown-container" ref={deployRef}>
-            <button className="nav-button" onClick={toggleDeployNotice}>
-              Deploy
-            </button>
-            {showDeployNotice && (
-              <div className="dropdown-notice">
-                Soon you can deploy your own pray token
-              </div>
-            )}
-          </div>
+          <button 
+            className="nav-button" 
+            onClick={openDeployPage}
+          >
+            Deploy
+          </button>
+          <button 
+            className={`nav-button ${currentPage === 'factory' ? 'active' : ''}`} 
+            onClick={navigateToFactory}
+          >
+            Factory
+          </button>
           <div className="dropdown-container" ref={docRef}>
-            <button className="nav-button" onClick={toggleDocNotice}>
-              Documentation
+            <button className="nav-button" onClick={toggleAboutModal}>
+              About
             </button>
-            {showDocNotice && (
-              <div className="dropdown-notice">
-                Coming soon
-              </div>
-            )}
           </div>
           <a 
             href="https://x.com/MetaDogeisme" 
@@ -450,74 +534,33 @@ function App() {
       </header>
       
       <main className="app-main">
-        <div className="game-container">
-          <PrayerHands 
-            status={prayingStatus} 
-            onPray={handlePray} 
-            isConnected={isConnected}
-            isCorrectNetwork={isCorrectNetwork}
-            onConnectWallet={() => document.querySelector('.connect-button')?.click()}
-          />
-          
-          <div className="controls-container">
-            {error && <div className="error-message">{error}</div>}
-            
-            {txHash && txStatus && (
-              <div className={`tx-status ${getStatusClass()}`}>
-                <div className="tx-status-text">{getStatusText()}</div>
-                <a 
-                  href={`${EXPLORER_URL}/tx/${txHash}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="tx-link"
-                >
-                  View transaction
-                </a>
-              </div>
-            )}
-            
-            <ProgressBar 
-              progress={prayProgress} 
-              remaining={globalStats.remainingSupply}
-              total={globalStats.totalSupply}
-              title="Karma"
-            />
-          </div>
-          
-          {isConnected && (
-            <>
-              <PrayerStats 
-                balance={prayerStats.balance} 
-                mined={prayerStats.mined}
-                totalMined={globalStats.totalMined}
-                totalSupply={globalStats.totalSupply}
-              />
-              <AllocationStats />
-            </>
-          )}
-          
-          {/* Mining success animation */}
-          {showPrayAnimation && (
-            <PrayingAnimation 
-              onComplete={handleAnimationComplete} 
-            />
-          )}
-          
-          {/* Test button - disabled */}
-          {/* 
-          {process.env.NODE_ENV === 'development' && (
-            <div className="test-controls">
-              <button 
-                onClick={simulatePrayedOut}
-                className="test-button"
-              >
-                Test: Simulate all tokens prayed out
-              </button>
-            </div>
-          )}
-          */}
-        </div>
+        {renderMainContent()}
       </main>
+      
+      {showDeployPage && (
+        <DeployPage 
+          isConnected={isConnected} 
+          account={account} 
+          onClose={closeDeployPage} 
+        />
+      )}
+      
+      {showAboutModal && (
+        <div className="modal-overlay" onClick={toggleAboutModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="close-button" onClick={toggleAboutModal}>×</button>
+            <h2>About Pray.Fun</h2>
+            <p>Pray.Fun is a decentralized prayer and token creation platform built on the Somnia Network.</p>
+            <p>Users can pray to mine FAITH tokens, and deploy their own custom prayer tokens by burning FAITH.</p>
+            <h3>Key Features:</h3>
+            <ul>
+              <li>Pray to mine FAITH tokens</li>
+              <li>Deploy custom prayer tokens</li>
+              <li>Browse and pray-to-earn deployed tokens</li>
+            </ul>
+          </div>
+        </div>
+      )}
       
       <footer className="app-footer">
         <div className="footer-content">

@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-verify");
+require("@nomicfoundation/hardhat-ethers");
 require("dotenv").config();
 
 module.exports = {

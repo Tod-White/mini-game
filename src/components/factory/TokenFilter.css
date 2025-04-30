@@ -1,0 +1,207 @@
+.token-filter {
+  background-color: rgba(177, 156, 217, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 24px;
+  justify-content: space-between;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.search-group {
+  position: relative;
+  flex: 1.5;
+  min-width: 300px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 182, 193, 0.3);
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-size: 14px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(255, 182, 193, 0.3);
+}
+
+.clear-search-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+.clear-search-button:hover {
+  color: #fff;
+}
+
+.sort-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-group label {
+  color: #aaa;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.sort-select {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 182, 193, 0.3);
+  background-color: rgba(0, 0, 0, 0.2);
+  color: #fff;
+  font-size: 14px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23aaaaaa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 30px;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(255, 182, 193, 0.3);
+}
+
+.mine-group {
+  display: flex;
+  align-items: center;
+  min-width: 150px;
+  margin-left: 20px;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.mine-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e1e1e6;
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mine-checkbox {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 182, 193, 0.3);
+  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  position: relative;
+}
+
+.mine-checkbox:checked {
+  background-color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.mine-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.mine-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 182, 193, 0.3);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.clear-filters-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #e1e1e6;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-filters-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.refresh-button {
+  background-color: rgba(177, 156, 217, 0.2);
+  color: var(--accent-color);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:hover {
+  background-color: rgba(177, 156, 217, 0.3);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .token-filter {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .filter-group {
+    width: 100%;
+    max-width: none;
+  }
+  
+  .mine-group {
+    margin-left: 0;
+    justify-content: flex-start;
+    width: 100%;
+  }
+  
+  .filter-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+} 

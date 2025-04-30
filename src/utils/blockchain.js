@@ -1,4 +1,11 @@
-const { ethers } = require('ethers');
+const { 
+  ethers, 
+  BrowserProvider, 
+  Contract, 
+  formatUnits, 
+  JsonRpcProvider, 
+  parseUnits 
+} = require('ethers');
 
 // Contract ABI - replace with the actual ABI from your compiled contract
 const KarmaTokenABI = [
@@ -81,7 +88,7 @@ export const initBlockchain = async () => {
     const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
     
     // Set up provider and signer
-    provider = new ethers.providers.Web3Provider(window.ethereum);
+    provider = new BrowserProvider(window.ethereum);
     signer = await provider.getSigner();
     
     // Get current network
@@ -105,7 +112,7 @@ export const initBlockchain = async () => {
     }
     
     // Initialize contract connection
-    karmaTokenContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, signer);
+    karmaTokenContract = new Contract(CONTRACT_ADDRESS, KarmaTokenABI, signer);
     
     // Set up event listeners
     setupEventListeners();
@@ -129,7 +136,7 @@ const setupEventListeners = () => {
   karmaTokenContract.on("Mining", (miner, amount, timestamp) => {
     const event = {
       miner,
-      amount: ethers.utils.formatUnits(amount, 18),
+      amount: formatUnits(amount, 18),
       timestamp: timestamp.toNumber(),
       date: new Date(timestamp.toNumber() * 1000)
     };
@@ -145,7 +152,7 @@ const setupEventListeners = () => {
     const event = {
       from,
       to,
-      value: ethers.utils.formatUnits(value, 18)
+      value: formatUnits(value, 18)
     };
     
     console.log("Transfer event:", event);
@@ -157,7 +164,7 @@ const setupEventListeners = () => {
   // MiningExhausted event
   karmaTokenContract.on("MiningExhausted", (totalMined, timestamp) => {
     const event = {
-      totalMined: ethers.utils.formatUnits(totalMined, 18),
+      totalMined: formatUnits(totalMined, 18),
       timestamp: timestamp.toNumber(),
       date: new Date(timestamp.toNumber() * 1000)
     };
@@ -203,7 +210,7 @@ export const addNetworkSwitchListener = (listener) => {
     // Initial check
     setTimeout(async () => {
       try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const provider = new BrowserProvider(window.ethereum);
         const network = await provider.getNetwork();
         const isCorrectNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
         console.log("[blockchain.js] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", isCorrectNetwork);
@@ -308,7 +315,7 @@ export const getBalance = async (address) => {
   if (!karmaTokenContract) throw new Error("Contract not initialized");
   
   const balance = await karmaTokenContract.balanceOf(address);
-  return ethers.utils.formatUnits(balance, 18);
+  return formatUnits(balance, 18);
 };
 
 // Get miner stats
@@ -316,63 +323,46 @@ export const getMinerStats = async (address) => {
   if (!karmaTokenContract) throw new Error("Contract not initialized");
   
   const stats = await karmaTokenContract.getMinerStats(address);
-  return ethers.utils.formatUnits(stats, 18);
+  return formatUnits(stats, 18);
 };
 
-// Get global statistics
+// Get global stats about the contract
 export const getGlobalStats = async () => {
-  // Initialize a read-only provider for non-authenticated users
-  const readOnlyProvider = new ethers.providers.JsonRpcProvider(SOMNIA_RPC_URL);
-  
-  if (!karmaTokenContract) {
-    console.log("Using read-only contract for global stats");
-    const readOnlyContract = new ethers.Contract(CONTRACT_ADDRESS, KarmaTokenABI, readOnlyProvider);
-    
-    try {
-      // Get statistics from the contract
+  try {
+    if (!karmaTokenContract) {
+      console.log("Contract not initialized, creating read-only instance...");
+      
+      // Create a read-only contract instance
+      const readProvider = new JsonRpcProvider(SOMNIA_RPC_URL);
+      const readOnlyContract = new Contract(CONTRACT_ADDRESS, KarmaTokenABI, readProvider);
+      
+      // Get stats from contract
       const totalMined = await readOnlyContract.totalMined();
       const remainingSupply = await readOnlyContract.getRemainingSupply();
       const totalSupply = await readOnlyContract.MAX_SUPPLY();
-      console.log("[getGlobalStats] totalMined:", totalMined.toString());
-      console.log("[getGlobalStats] remainingSupply:", remainingSupply.toString());
+      
       console.log("[getGlobalStats] totalSupply:", totalSupply.toString());
       return {
-        totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
-        remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
-        totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
-      };
-    } catch (error) {
-      console.error("[getGlobalStats] Error fetching global stats (readOnlyContract):", error);
-      // Return default values if there's an error
-      return {
-        totalMined: 0,
-        remainingSupply: 77770000,
-        totalSupply: 77770000
+        totalMined: parseFloat(formatUnits(totalMined, 18)),
+        remainingSupply: parseFloat(formatUnits(remainingSupply, 18)),
+        totalSupply: parseFloat(formatUnits(totalSupply, 18))
       };
     }
-  }
-  
-  try {
-    // Get statistics from the contract
+    
+    // Get stats from initialized contract
     const totalMined = await karmaTokenContract.totalMined();
     const remainingSupply = await karmaTokenContract.getRemainingSupply();
     const totalSupply = await karmaTokenContract.MAX_SUPPLY();
-    console.log("[getGlobalStats] totalMined (connected):", totalMined.toString());
-    console.log("[getGlobalStats] remainingSupply (connected):", remainingSupply.toString());
+    
     console.log("[getGlobalStats] totalSupply (connected):", totalSupply.toString());
     return {
-      totalMined: parseFloat(ethers.utils.formatUnits(totalMined, 18)),
-      remainingSupply: parseFloat(ethers.utils.formatUnits(remainingSupply, 18)),
-      totalSupply: parseFloat(ethers.utils.formatUnits(totalSupply, 18))
+      totalMined: parseFloat(formatUnits(totalMined, 18)),
+      remainingSupply: parseFloat(formatUnits(remainingSupply, 18)),
+      totalSupply: parseFloat(formatUnits(totalSupply, 18))
     };
   } catch (error) {
-    console.error("[getGlobalStats] Error fetching global stats (connected):", error);
-    // Return default values if there's an error
-    return {
-      totalMined: 0,
-      remainingSupply: 77770000,
-      totalSupply: 77770000
-    };
+    console.error("Error getting global stats:", error);
+    throw error;
   }
 };
 
@@ -393,78 +383,103 @@ export const unsubscribeFromTransaction = (txHash) => {
   }
 };
 
-// Track transaction status
+// Track a transaction until it's confirmed
 const trackTransaction = async (txHash) => {
-  if (!provider) return;
-  
   try {
-    // Initial status update - pending
-    if (transactionListeners[txHash]) {
-      transactionListeners[txHash]({
-        status: TX_STATUS.PENDING,
-        txHash,
-        confirmations: 0
-      });
-    }
+    // Get transaction receipt
+    const receipt = await provider.getTransactionReceipt(txHash);
     
-    // Wait for transaction to be mined
-    const receipt = await provider.waitForTransaction(txHash);
-    
-    // Check if transaction was successful
-    const status = receipt.status === 1 ? TX_STATUS.CONFIRMED : TX_STATUS.FAILED;
-    
-    // Notify listener
-    if (transactionListeners[txHash]) {
-      transactionListeners[txHash]({
-        status,
-        txHash,
-        confirmations: 1,
-        receipt
-      });
-    }
-  } catch (error) {
-    console.error("Transaction tracking error:", error);
-    if (transactionListeners[txHash]) {
-      // Provide more user-friendly error messages
-      let userFriendlyError = "Transaction failed. Please try again later.";
+    if (!receipt) {
+      // Transaction is still pending
+      console.log(`Transaction ${txHash} is still pending...`);
       
-      if (error.message.includes("transaction receipt not found")) {
-        userFriendlyError = "Blockchain network is busy. Your transaction timed out. Please try again later.";
+      // Notify listeners
+      if (transactionListeners[txHash]) {
+        transactionListeners[txHash]({
+          status: TX_STATUS.PENDING,
+          hash: txHash
+        });
       }
       
+      // Check again in 5 seconds
+      setTimeout(() => trackTransaction(txHash), 5000);
+      return;
+    }
+    
+    // Transaction is confirmed
+    console.log(`Transaction ${txHash} confirmed with status: ${receipt.status}`);
+    
+    // Check transaction status
+    if (receipt.status === 1) {
+      // Transaction was successful
+      if (transactionListeners[txHash]) {
+        transactionListeners[txHash]({
+          status: TX_STATUS.CONFIRMED,
+          hash: txHash,
+          blockNumber: receipt.blockNumber,
+          gasUsed: formatUnits(receipt.gasUsed, 0)
+        });
+      }
+    } else {
+      // Transaction failed
+      console.error(`Transaction ${txHash} failed`);
+      
+      if (transactionListeners[txHash]) {
+        transactionListeners[txHash]({
+          status: TX_STATUS.FAILED,
+          hash: txHash,
+          error: "Transaction failed on the blockchain"
+        });
+      }
+    }
+  } catch (error) {
+    console.error(`Error tracking transaction ${txHash}:`, error);
+    
+    if (transactionListeners[txHash]) {
       transactionListeners[txHash]({
         status: TX_STATUS.FAILED,
-        txHash,
-        error: userFriendlyError
+        hash: txHash,
+        error: error.message
       });
     }
   }
 };
 
-// Pray for karma tokens
+// Mine (pray) for Karma tokens
 export const prayForKarma = async () => {
-  if (!karmaTokenContract) throw new Error("Contract not initialized");
+  if (!karmaTokenContract || !signer) {
+    throw new Error("Contract or signer not initialized");
+  }
   
   try {
     const tx = await karmaTokenContract.mine();
+    console.log("Prayer transaction sent:", tx.hash);
     
-    // Return just the transaction hash, not an object
+    // Start tracking transaction
+    trackTransaction(tx.hash);
+    
     return tx.hash;
   } catch (error) {
     console.error("Prayer error:", error);
-    
-    // Provide more user-friendly error messages
-    if (error.code === "ACTION_REJECTED") {
-      throw new Error("Prayer requires your signature to confirm the transaction. Please confirm in your wallet to continue.");
-    } else if (error.message.includes("insufficient funds")) {
-      throw new Error("Your account has insufficient funds to pay for transaction fees. Please ensure you have enough STT.");
-    } else {
-      throw error; // Other errors remain unchanged
-    }
-  };
+    throw error;
+  }
 };
 
-// Get top holders
+// Get top token holders
 export const getTopHolders = async () => {
-  return []; // Return empty array as we're not using this anymore
+  try {
+    // This is just a placeholder - in a real application,
+    // you would need an indexer or backend service to track token holders
+    // as this data can't be easily fetched directly from the contract
+    
+    // For demonstration purposes, let's return a static list
+    return [
+      { address: '0x1234...', balance: '10000' },
+      { address: '0x5678...', balance: '5000' },
+      { address: '0x9abc...', balance: '2500' }
+    ];
+  } catch (error) {
+    console.error("Error fetching top holders:", error);
+    throw error;
+  }
 }; 

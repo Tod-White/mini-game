@@ -8,7 +8,7 @@ import {
   addNetworkSwitchListener,
   SOMNIA_CHAIN_ID
 } from '../utils/blockchain';
-import { ethers } from 'ethers';
+import { ethers, BrowserProvider } from 'ethers';
 
 const WalletConnector = ({ isConnected, account, onConnect }) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +32,7 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
       }
       
       // Check network first
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new BrowserProvider(window.ethereum);
       const network = await provider.getNetwork();
       const correctNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
       console.log("[WalletConnector] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", correctNetwork);
@@ -93,7 +93,7 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
       }
       
       try {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const provider = new BrowserProvider(window.ethereum);
         const network = await provider.getNetwork();
         const correctNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
         console.log("[WalletConnector] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", correctNetwork);
@@ -158,7 +158,7 @@ const WalletConnector = ({ isConnected, account, onConnect }) => {
         // Check if network was successfully changed
         setTimeout(async () => {
           if (window.ethereum) {
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const provider = new BrowserProvider(window.ethereum);
             const network = await provider.getNetwork();
             const correctNetwork = Number(network.chainId) === Number(SOMNIA_CHAIN_ID);
             console.log("[WalletConnector] Wallet chainId:", network.chainId, "Expected:", SOMNIA_CHAIN_ID, "Correct:", correctNetwork);
